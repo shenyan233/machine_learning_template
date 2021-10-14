@@ -1,6 +1,7 @@
 import os
+
+import numpy.random
 from pytorch_lightning.callbacks import ModelCheckpoint
-import pytorch_lightning
 import pytorch_lightning as pl
 import shutil
 import random
@@ -35,12 +36,9 @@ class SaveCheckpoint(ModelCheckpoint):
         :param no_save_before_epoch:
         """
         super().__init__(every_n_epochs=every_n_epochs, verbose=verbose, mode=mode)
-        random.seed(seed)
-        self.seeds = []
-        for i in range(max_epochs):
-            self.seeds.append(random.randint(0, 2000))
-        self.seeds.append(0)
-        pytorch_lightning.seed_everything(seed)
+        numpy.random.seed(seed)
+        self.seeds = numpy.random.randint(0, 2000, max_epochs)
+        pl.seed_everything(seed)
         self.save_name = save_name
         self.path_final_save = path_final_save
         self.monitor = monitor
@@ -57,11 +55,11 @@ class SaveCheckpoint(ModelCheckpoint):
         :param pl_module:
         :return:
         """
+        # 第一个epoch使用原始输入seed作为种子, 后续的epoch使用seeds中的第epoch-1个作为种子
         if self.flag_sanity_check == 0:
-            pytorch_lightning.seed_everything(self.seeds[trainer.current_epoch])
             self.flag_sanity_check = 1
         else:
-            pytorch_lightning.seed_everything(self.seeds[trainer.current_epoch + 1])
+            pl.seed_everything(self.seeds[trainer.current_epoch])
         super().on_validation_end(trainer, pl_module)
 
     def _save_top_k_checkpoint(self, trainer: 'pl.Trainer', monitor_candidates) -> None:
