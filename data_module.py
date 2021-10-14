@@ -1,45 +1,59 @@
+import os
+import numpy
 import torch
+from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 import pytorch_lightning as pl
 
 
 class DataModule(pl.LightningDataModule):
-    def __init__(self, batch_size, num_workers, config=None):
+    def __init__(self, batch_size, num_workers, k_fold, kth_fold, dataset_path, config=None):
         super().__init__()
-        # TODO 使用k折交叉验证
-        # divide_dataset(config['dataset_path'], [0.8, 0, 0.2])
-        if config['flag']:
-            self.x = torch.randn(config['dataset_len'], 2)
-            noise = torch.randn(config['dataset_len'], )
-            self.y = 1.0 * self.x[:, 0] + 2.0 * self.x[:, 1] + noise
-        else:
-            x_1 = torch.randn(config['dataset_len'])
-            x_2 = torch.randn(config['dataset_len'])
-            x_useful = torch.cos(1.5 * x_1) * (x_2 ** 2)
-            x_1_rest_small = torch.randn(config['dataset_len'], 15) + 0.01 * x_1.unsqueeze(1)
-            x_1_rest_large = torch.randn(config['dataset_len'], 15) + 0.1 * x_1.unsqueeze(1)
-            x_2_rest_small = torch.randn(config['dataset_len'], 15) + 0.01 * x_2.unsqueeze(1)
-            x_2_rest_large = torch.randn(config['dataset_len'], 15) + 0.1 * x_2.unsqueeze(1)
-            self.x = torch.cat([x_1[:, None], x_2[:, None], x_1_rest_small, x_1_rest_large, x_2_rest_small, x_2_rest_large],
-                          dim=1)
-            self.y = (10 * x_useful) + 5 * torch.randn(config['dataset_len'])
-
-        self.y_train, self.y_test = self.y[:50000], self.y[50000:]
-        self.x_train, self.x_test = self.x[:50000, :], self.x[50000:, :]
-
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.config = config
-        self.train_dataset = None
-        self.val_dataset = None
-        self.test_dataset = None
+        self.k_fold = k_fold
+        self.kth_fold = kth_fold
+        self.dataset_path = dataset_path
 
     def setup(self, stage=None) -> None:
+        # 得到全部数据的list
+        # dataset_list = get_dataset_list(dataset_path)
+        x, y = self.get_fit_dataset_list()
         if stage == 'fit' or stage is None:
-            self.train_dataset = CustomDataset(self.x_train, self.y_train, self.config)
-            self.val_dataset = CustomDataset(self.x_test, self.y_test, self.config)
+            x_train, y_train, x_val, y_val = self.get_dataset_lists(x, y)
+            self.train_dataset = CustomDataset(x_train, y_train, self.config)
+            self.val_dataset = CustomDataset(x_val, y_val, self.config)
         if stage == 'test' or stage is None:
-            self.test_dataset = CustomDataset(self.x, self.y, self.config)
+            self.test_dataset = CustomDataset(x, y, self.config)
+
+    def get_fit_dataset_list(self):
+        if not os.path.exists(self.dataset_path + '/dataset_list.txt'):
+            x = torch.randn(self.config['dataset_len'], self.config['dim_in'])
+            noise = torch.randn(self.config['dataset_len'])
+            y = torch.cos(1.5 * x[:, 0]) * (x[:, 1] ** 2.0) + noise
+            with open(self.dataset_path + '/dataset_list.txt', 'w', encoding='utf-8') as f:
+                for line in range(self.config['dataset_len']):
+                    f.write(' '.join([str(temp) for temp in x[line].tolist()]) + ' ' + str(y[line].item()) + '\n')
+            print('已生成新的数据list')
+        else:
+            dataset_list = open(self.dataset_path + '/dataset_list.txt').readlines()
+            dataset_list = [[float(temp) for temp in item.strip('\n').split(' ')] for item in dataset_list]
+            x = torch.from_numpy(numpy.array(dataset_list)[:, 0:self.config['dim_in']]).float()
+            y = torch.from_numpy(numpy.array(dataset_list)[:, self.config['dim_in']]).float()
+        return x, y
+
+    def get_dataset_lists(self, x: Tensor, y):
+        # 得到一个fold的数据量和不够组成一个fold的剩余数据的数据量
+        num_1fold, remainder = divmod(self.config['dataset_len'], self.k_fold)
+        # 分割全部数据, 得到训练集, 验证集, 测试集
+        x_val = x[num_1fold * self.kth_fold:(num_1fold * (self.kth_fold + 1) + remainder)]
+        y_val = y[num_1fold * self.kth_fold:(num_1fold * (self.kth_fold + 1) + remainder)]
+        temp = torch.ones(x.shape[0])
+        temp[num_1fold * self.kth_fold:(num_1fold * (self.kth_fold + 1) + remainder)] = 0
+        x_train = x[temp == 1]
+        y_train = y[temp == 1]
+        return x_train, y_train, x_val, y_val
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,

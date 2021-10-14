@@ -1,5 +1,5 @@
 import torch.nn as nn
-from torch.nn import Mish
+from network_module.activation import jdlu, JDLU
 
 
 class MLPLayer(nn.Module):
@@ -7,13 +7,15 @@ class MLPLayer(nn.Module):
         super().__init__()
         self.linear = nn.Linear(dim_in, dim_out)
         self.res_coef = res_coef
-        self.activation = Mish()
+        self.activation = nn.ReLU()
+        self.activation1 = JDLU(dim_out)
         self.dropout = nn.Dropout(dropout_p)
         self.ln = nn.LayerNorm(dim_out)
 
     def forward(self, x):
         y = self.linear(x)
-        y = self.activation(y)
+        y = self.activation1(y)
+        # y = jdlu(y)
         y = self.dropout(y)
         if self.res_coef == 0:
             return self.ln(y)

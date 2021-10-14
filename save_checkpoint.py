@@ -1,10 +1,8 @@
 import os
-
 import numpy.random
 from pytorch_lightning.callbacks import ModelCheckpoint
 import pytorch_lightning as pl
 import shutil
-import random
 from pytorch_lightning.utilities import rank_zero_info
 from utils import zip_dir
 
@@ -14,7 +12,6 @@ class SaveCheckpoint(ModelCheckpoint):
                  max_epochs,
                  seed=None,
                  every_n_epochs=None,
-                 save_name=None,
                  path_final_save=None,
                  monitor=None,
                  save_top_k=None,
@@ -27,7 +24,6 @@ class SaveCheckpoint(ModelCheckpoint):
         :param max_epochs:
         :param seed:
         :param every_n_epochs:
-        :param save_name:
         :param path_final_save:
         :param monitor:
         :param save_top_k:
@@ -39,7 +35,6 @@ class SaveCheckpoint(ModelCheckpoint):
         numpy.random.seed(seed)
         self.seeds = numpy.random.randint(0, 2000, max_epochs)
         pl.seed_everything(seed)
-        self.save_name = save_name
         self.path_final_save = path_final_save
         self.monitor = monitor
         self.save_top_k = save_top_k
@@ -71,11 +66,11 @@ class SaveCheckpoint(ModelCheckpoint):
 
         if self.check_monitor_top_k(trainer, current):
             self._update_best_and_save(current, trainer, monitor_candidates)
-            if self.save_name is not None and self.path_final_save is not None:
-                zip_dir('./logs/default/' + self.save_name, './' + self.save_name + '.zip')
-                if os.path.exists(self.path_final_save + '/' + self.save_name + '.zip'):
-                    os.remove(self.path_final_save + '/' + self.save_name + '.zip')
-                shutil.move('./' + self.save_name + '.zip', self.path_final_save)
+            if self.path_final_save is not None:
+                zip_dir('./logs', './logs.zip')
+                if os.path.exists(self.path_final_save + '/logs.zip'):
+                    os.remove(self.path_final_save + '/logs.zip')
+                shutil.move('./logs.zip', self.path_final_save)
         elif self.verbose:
             epoch = monitor_candidates.get("epoch")
             step = monitor_candidates.get("step")
