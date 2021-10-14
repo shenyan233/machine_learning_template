@@ -39,14 +39,18 @@ def main(stage,
     :param every_n_epochs:
     :param save_top_k:
     """
-    # config存放确定模型后不常改动的非通用的参数, 通用参数且不经常带动的直接进行声明
-    if False:
+    # 经常改动的      参数    作为main的输入参数
+    # 不常改动的   非通用参数    存放在config
+    # 不经常改动的  通用参数     直接进行声明
+    # 通用参数指的是所有网络中共有的参数, 如time_sum等
+    if True:
         config = {'dataset_path': dataset_path,
                   'dim_in': 2,
                   'dim': 10,
                   'res_coef': 0.5,
                   'dropout_p': 0.1,
                   'n_layers': 2,
+                  'dataset_len': 10000,
                   'flag': True}
     else:
         config = {'dataset_path': dataset_path,
@@ -55,6 +59,7 @@ def main(stage,
                   'res_coef': 0.5,
                   'dropout_p': 0.1,
                   'n_layers': 20,
+                  'dataset_len': 10000,
                   'flag': False}
     # TODO 获得最优的batch size
     # TODO 自动获取CPU核心数并设置num workers
@@ -66,8 +71,8 @@ def main(stage,
         save_checkpoint = SaveCheckpoint(seed=seed, max_epochs=max_epochs,
                                          save_name=save_name, path_final_save=path_final_save,
                                          every_n_epochs=every_n_epochs, verbose=True,
-                                         monitor='Validation acc', save_top_k=save_top_k,
-                                         mode='max')
+                                         monitor='Validation loss', save_top_k=save_top_k,
+                                         mode='min')
         if load_checkpoint_path is None:
             print('进行初始训练')
             trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores,
@@ -93,7 +98,7 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('fit', num_workers=8, max_epochs=5, batch_size=32, precision=16, seed=1234,
+    main('test', num_workers=8, max_epochs=5, batch_size=32, precision=16, seed=1234,
          # gpus=1,
-         # load_checkpoint_path='/version_5/checkpoints/epoch=149-step=7949.ckpt',
+         load_checkpoint_path='/version_4/checkpoints/epoch=4-step=7814.ckpt',
          )

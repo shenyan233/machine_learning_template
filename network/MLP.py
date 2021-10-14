@@ -30,11 +30,10 @@ class MLP(nn.Module):
         for i in range(n_layers):
             self.mlp.append(MLPLayer(dim, dim, res_coef, dropout_p))
         self.final = nn.Linear(dim, 1)
-        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         x = self.first_linear(x)
         for layer in self.mlp:
             x = layer(x)
-        x = self.sigmoid(self.final(x))
+        x = self.final(x)
         return x.squeeze()
