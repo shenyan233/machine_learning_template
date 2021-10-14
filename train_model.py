@@ -5,7 +5,9 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 from torch import nn
 import torch
-from network.MLP import MLP
+
+from network.MLP_JDLU import MLP_JDLU
+from network.MLP_ReLU import MLP_ReLU
 
 
 class TrainModule(pl.LightningModule):
@@ -13,8 +15,12 @@ class TrainModule(pl.LightningModule):
         super().__init__()
         self.time_sum = None
         self.config = config
-        self.net = MLP(config['dim_in'], config['dim'], config['res_coef'], config['dropout_p'], config['n_layers'])
-        # TODO 修改网络初始化方式为kaiming分布或者xavier分布
+        if 1:
+            self.net = MLP_ReLU(config['dim_in'], config['dim'], config['res_coef'], config['dropout_p'],
+                                config['n_layers'])
+        else:
+            self.net = MLP_JDLU(config['dim_in'], config['dim'], config['res_coef'], config['dropout_p'],
+                                config['n_layers'])
         self.loss = nn.MSELoss()
 
     def training_step(self, batch, batch_idx):

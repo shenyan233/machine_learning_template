@@ -37,9 +37,10 @@ def main(stage,
     :param tpu_cores:
     :param version_nth: 该folds的第一个版本的版本号
     :param path_final_save:
-    :param every_n_epochs:
+    :param every_n_epochs: 每n个epoch设置一个检查点
     :param save_top_k:
-    :param kth_fold_start: 从第几个fold开始, 若使用重载训练, 则kth_fold_start为重载第几个fold, 第一个值为0
+    :param kth_fold_start: 从第几个fold开始, 若使用重载训练, 则kth_fold_start为重载第几个fold, 第一个值为0.
+                           非重载训练的情况下, 可以通过调整该值控制训练的次数
     :param k_fold:
     """
     # 经常改动的      参数    作为main的输入参数
@@ -59,9 +60,8 @@ def main(stage,
               'dropout_p': 0.1,
               'n_layers': 2,
               'dataset_len': 100000}
-    # for kth_fold in range(kth_fold_start, k_fold):
-    for kth_fold in range(kth_fold_start, kth_fold_start+1):
-        load_checkpoint_path = get_ckpt_path(f'version_{version_nth+kth_fold}')
+    for kth_fold in range(kth_fold_start, k_fold):
+        load_checkpoint_path = get_ckpt_path(version_nth, kth_fold)
         logger = pl_loggers.TensorBoardLogger('logs/')
         dm = DataModule(batch_size=batch_size, num_workers=num_workers, k_fold=k_fold, kth_fold=kth_fold,
                         dataset_path=dataset_path, config=config)
@@ -99,8 +99,8 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=2, batch_size=32, precision=16, seed=1234, dataset_path='./dataset', k_fold=5
+    main('fit', max_epochs=2, batch_size=32, precision=16, seed=1234, dataset_path='./dataset', k_fold=5,
          # gpus=1,
          # version_nth=8, # 该folds的第一个版本的版本号
-         # kth_fold_start=0 # 如果需要重载训练, 则指定重载的版本和其位于k_fold的fold数
+         kth_fold_start=4,
          )
