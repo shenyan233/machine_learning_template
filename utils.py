@@ -87,7 +87,7 @@ def visual_label(dataset_path, n_classes):
     from torchvision import transforms
     trans_factory = transforms.ToPILImage()
     if not os.path.exists(dataset_path + '/visual_label'):
-        os.mkdir(dataset_path + '/visual_label')
+        os.makedirs(dataset_path + '/visual_label')
     for index in range(len(label_image_list)):
         label_image = cv2.imread(label_image_list[index], -1)
         name = os.path.basename(label_image_list[index])
