@@ -31,7 +31,10 @@ class DataModule(pl.LightningDataModule):
         if not os.path.exists(self.dataset_path + '/dataset_list.txt'):
             x = torch.randn(self.config['dataset_len'], self.config['dim_in'])
             noise = torch.randn(self.config['dataset_len'])
-            y = torch.cos(1.5 * x[:, 0]) * (x[:, 1] ** 2.0) + noise
+            y = torch.cos(1.5 * x[:, 0]) * (x[:, 1] ** 2.0) + torch.cos(torch.sin(x[:, 2] ** 3)) + torch.arctan(
+                x[:, 4]) + noise
+            assert (x[torch.isnan(x)].shape[0] == 0)
+            assert (y[torch.isnan(y)].shape[0] == 0)
             with open(self.dataset_path + '/dataset_list.txt', 'w', encoding='utf-8') as f:
                 for line in range(self.config['dataset_len']):
                     f.write(' '.join([str(temp) for temp in x[line].tolist()]) + ' ' + str(y[line].item()) + '\n')

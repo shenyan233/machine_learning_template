@@ -2,10 +2,8 @@
 import glob
 import os
 import random
-import string
 import zipfile
 import cv2
-import numpy
 import torch
 
 
