@@ -1,9 +1,11 @@
+import glob
 import os
-import numpy
+import random
 import torch
-from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 import pytorch_lightning as pl
+from PIL import Image
+from torchvision import transforms
 
 
 class DataModule(pl.LightningDataModule):
@@ -17,46 +19,44 @@ class DataModule(pl.LightningDataModule):
         self.dataset_path = dataset_path
 
     def setup(self, stage=None) -> None:
-        # 得到全部数据的list
-        dataset_list = self.get_dataset_list()
+        k_fold_dataset_list = self.get_k_fold_dataset_list()
         if stage == 'fit' or stage is None:
-            dataset_train, dataset_val = self.get_dataset_lists(dataset_list)
-            self.train_dataset = CustomDataset(dataset_train, self.config)
-            self.val_dataset = CustomDataset(dataset_val, self.config)
+            dataset_train, dataset_val = self.get_fit_dataset_lists(k_fold_dataset_list)
+            self.train_dataset = CustomDataset(self.dataset_path, dataset_train, self.config, 'train')
+            self.val_dataset = CustomDataset(self.dataset_path, dataset_val, self.config, 'train')
         if stage == 'test' or stage is None:
-            self.test_dataset = CustomDataset(dataset_list, self.config)
+            dataset_test = self.get_test_dataset_lists(k_fold_dataset_list)
+            self.test_dataset = CustomDataset(self.dataset_path, dataset_test, self.config, 'test')
 
-    def get_dataset_list(self):
-        if not os.path.exists(self.dataset_path + '/dataset_list.txt'):
-            # 针对数据拟合获得dataset
-            dataset = torch.randn(self.config['dataset_len'], self.config['dim_in'] + 1)
-            noise = torch.randn(self.config['dataset_len'])
-            dataset[:, self.config['dim_in']] = torch.cos(1.5 * dataset[:, 0]) * (dataset[:, 1] ** 2.0) + torch.cos(
-                torch.sin(dataset[:, 2] ** 3)) + torch.arctan(dataset[:, 4]) + noise
-            assert (dataset[torch.isnan(dataset)].shape[0] == 0)
-            written = [' '.join([str(temp) for temp in dataset[cou, :].tolist()]) for cou in range(dataset.shape[0])]
+    def get_k_fold_dataset_list(self):
+        # 得到用于K折分割的数据的list, 并生成文件夹进行保存
+        if not os.path.exists(self.dataset_path + '/k_fold_dataset_list.txt'):
+            # 获得用于k折分割的数据的list
+            dataset = glob.glob(self.dataset_path + '/train/image/*.png')
+            random.shuffle(dataset)
+            written = dataset
 
-            with open(self.dataset_path + '/dataset_list.txt', 'w', encoding='utf-8') as f:
+            with open(self.dataset_path + '/k_fold_dataset_list.txt', 'w', encoding='utf-8') as f:
                 for line in written:
-                    f.write(line + '\n')
-            print('已生成新的数据list')
+                    f.write(line.replace('\\', '/') + '\n')
+            print('已生成新的k折数据list')
         else:
-            dataset_list = open(self.dataset_path + '/dataset_list.txt').readlines()
-            # 针对数据拟合获得dataset
-            dataset_list = [[float(temp) for temp in item.strip('\n').split(' ')] for item in dataset_list]
-            dataset = torch.Tensor(dataset_list).float()
-
+            dataset = open(self.dataset_path + '/k_fold_dataset_list.txt').readlines()
+            dataset = [item.strip('\n') for item in dataset]
         return dataset
 
-    def get_dataset_lists(self, dataset_list: Tensor):
+    def get_fit_dataset_lists(self, dataset_list: list):
         # 得到一个fold的数据量和不够组成一个fold的剩余数据的数据量
-        num_1fold, remainder = divmod(self.config['dataset_len'], self.k_fold)
+        num_1fold, remainder = divmod(len(dataset_list), self.k_fold)
         # 分割全部数据, 得到训练集, 验证集, 测试集
-        dataset_val = dataset_list[num_1fold * self.kth_fold:(num_1fold * (self.kth_fold + 1) + remainder), :]
-        temp = torch.ones(dataset_list.shape[0])
-        temp[num_1fold * self.kth_fold:(num_1fold * (self.kth_fold + 1) + remainder)] = 0
-        dataset_train = dataset_list[temp == 1]
+        dataset_val = dataset_list[num_1fold * self.kth_fold:(num_1fold * (self.kth_fold + 1) + remainder)]
+        del (dataset_list[num_1fold * self.kth_fold:(num_1fold * (self.kth_fold + 1) + remainder)])
+        dataset_train = dataset_list
         return dataset_train, dataset_val
+
+    def get_test_dataset_lists(self, dataset_list):
+        dataset = glob.glob(self.dataset_path + '/test/image/*.png')
+        return dataset
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,
@@ -72,13 +72,19 @@ class DataModule(pl.LightningDataModule):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, dataset, config):
+    def __init__(self, dataset_path, dataset, config, type):
         super().__init__()
-        self.x = dataset[:, 0:config['dim_in']]
-        self.y = dataset[:, config['dim_in']]
+        self.dataset = dataset
+        self.trans = transforms.ToTensor()
+        self.labels = open(dataset_path + '/' + type + '/label.txt').readlines()
 
     def __getitem__(self, idx):
-        return self.x[idx, :], self.y[idx]
+        image_path = self.dataset[idx]
+        image_name = os.path.basename(image_path)
+        image = Image.open(image_path)
+        image = self.trans(image)
+        label = torch.Tensor([int(self.labels[int(image_name.strip('.png'))].strip('\n'))])
+        return image_name, image, label.long()
 
     def __len__(self):
-        return self.x.shape[0]
+        return len(self.dataset)

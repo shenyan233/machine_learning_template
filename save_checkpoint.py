@@ -92,10 +92,10 @@ class SaveCheckpoint(ModelCheckpoint):
                         f.write(line + '\n')
             # 每次更新ckpt文件后, 将其存放到另一个位置
             if self.path_final_save is not None:
-                zip_dir('./logs', './logs.zip')
-                if os.path.exists(self.path_final_save + '/logs.zip'):
-                    os.remove(self.path_final_save + '/logs.zip')
-                shutil.move('./logs.zip', self.path_final_save)
+                zip_dir('./logs/default/' + self.dirpath.split('\\')[1], './' + self.dirpath.split('\\')[1] + '.zip')
+                if os.path.exists(self.path_final_save + '/' + self.dirpath.split('\\')[1] + '.zip'):
+                    os.remove(self.path_final_save + '/' + self.dirpath.split('\\')[1] + '.zip')
+                shutil.move('./' + self.dirpath.split('\\')[1] + '.zip', self.path_final_save)
         elif self.verbose:
             epoch = monitor_candidates.get("epoch")
             step = monitor_candidates.get("step")

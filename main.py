@@ -32,15 +32,15 @@ def main(stage,
     :param precision: 训练精度, 正常精度为32, 半精度为16, 也可以是64. 精度代表每个参数的类型所占的位数
     :param seed:
 
-    :param dataset_path: 数据集地址, 其目录下包含数据集, 标签, 全部数据的命名list
+    :param dataset_path: 数据集地址, 其目录下包含数据集文件夹, 标签文件夹, 全部数据的命名list
     :param gpus:
     :param tpu_cores:
-    :param version_nth: 该folds的第一个版本的版本号
+    :param version_nth: 不论是重载训练还是测试, 固定为该folds的第一个版本的版本号
     :param path_final_save:
     :param every_n_epochs: 每n个epoch设置一个检查点
     :param save_top_k:
     :param kth_fold_start: 从第几个fold开始, 若使用重载训练, 则kth_fold_start为重载第几个fold, 第一个值为0.
-                           非重载训练的情况下, 可以通过调整该值控制训练的次数
+                           非重载训练的情况下, 可以通过调整该值控制训练的次数;
     :param k_fold:
     """
     # 经常改动的      参数    作为main的输入参数
@@ -70,8 +70,8 @@ def main(stage,
             save_checkpoint = SaveCheckpoint(seed=seed, max_epochs=max_epochs,
                                              path_final_save=path_final_save,
                                              every_n_epochs=every_n_epochs, verbose=True,
-                                             monitor='Validation loss', save_top_k=save_top_k,
-                                             mode='min')
+                                             monitor='Validation acc', save_top_k=save_top_k,
+                                             mode='max')
             training_module = TrainModule(config=config)
             if kth_fold != kth_fold_start or load_checkpoint_path is None:
                 print('进行初始训练')
@@ -101,6 +101,6 @@ def main(stage,
 if __name__ == "__main__":
     main('fit', max_epochs=2, batch_size=32, precision=16, seed=1234, dataset_path='./dataset', k_fold=5,
          # gpus=1,
-         # version_nth=8, # 该folds的第一个版本的版本号
+         # version_nth=8,
          kth_fold_start=4,
          )
