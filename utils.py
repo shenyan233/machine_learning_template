@@ -11,9 +11,12 @@ def get_dataset_list(dataset_path):
     if not os.path.exists(dataset_path + '/dataset_list.txt'):
         all_list = glob.glob(dataset_path + '/labels' + '/*.png')
         random.shuffle(all_list)
+        all_list = [os.path.basename(item.replace('\\', '/')) for item in all_list]
+        written = all_list
+
         with open(dataset_path + '/dataset_list.txt', 'w', encoding='utf-8') as f:
-            for line in all_list:
-                f.write(os.path.basename(line.replace('\\', '/')) + '\n')
+            for line in written:
+                f.write(line + '\n')
             print('已生成新的数据list')
         return all_list
     else:
