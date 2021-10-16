@@ -106,24 +106,5 @@ def get_ckpt_path(version_nth: int, kth_fold: int):
         return ckpt_path[0].replace('\\', '/')
 
 
-def rwxl():
-    # 写
-    # dataset_xl = xl.Workbook(write_only=True)
-    # dataset_sh = dataset_xl.create_sheet('dataset', 0)
-    # for row in range(self.x.shape[0]):
-    #     for col in range(self.x.shape[1]):
-    #         dataset_sh.cell(row + 1, col + 1).value = float(self.x[row, col])
-    #     dataset_sh.cell(row + 1, self.x.shape[1] + 1).value = float(self.y[row])
-    # dataset_xl.save(dataset_path + '/dataset.xlsx')
-    # dataset_xl.close()
-    # 读
-    # dataset_xl = xl.load_workbook(dataset_path + '/dataset_list.xlsx', read_only=True)
-    # dataset_sh = dataset_xl.get_sheet_by_name('dataset_list')
-    # temp = [[dataset_sh[row + 1][col].value for col in range(config['dim_in'] + 1)] for row in
-    #         range(config['dataset_len'])]
-    # dataset_xl.close()
-    pass
-
-
 if __name__ == "__main__":
     get_ckpt_path('version_0')
