@@ -59,12 +59,7 @@ def main(stage,
     # TODO 获得最优的batch size
     num_workers = cpu_count()
     # 获得非通用参数
-    config = {'dim_in': 5,
-              'dim': 10,
-              'res_coef': 0.5,
-              'dropout_p': 0.1,
-              'n_layers': 3,
-              'dataset_len': 100000}
+    config = {'dim_in': 32, }
     for kth_fold in range(kth_fold_start, k_fold):
         load_checkpoint_path = get_ckpt_path(version_nth, kth_fold)
         logger = pl_loggers.TensorBoardLogger('logs/')
