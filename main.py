@@ -1,3 +1,5 @@
+import torch
+
 from save_checkpoint import SaveCheckpoint
 from data_module import DataModule
 from pytorch_lightning import loggers as pl_loggers
@@ -27,6 +29,11 @@ def main(stage,
     框架的入口函数. 包含设置超参数, 划分数据集, 选择训练或测试等流程
     该函数的参数为训练过程中需要经常改动的参数
 
+    经常改动的      参数    作为main的输入参数
+    不常改动的   非通用参数    存放在config
+    不常改动的    通用参数     直接进行声明
+    * 通用参数指的是所有网络中共有的参数, 如time_sum等
+
     :param stage: 表示处于训练阶段还是测试阶段, fit表示训练, test表示测试
     :param max_epochs:
     :param batch_size:
@@ -44,14 +51,11 @@ def main(stage,
                            非重载训练的情况下, 可以通过调整该值控制训练的次数;
     :param k_fold:
     """
-    # 经常改动的      参数    作为main的输入参数
-    # 不常改动的   非通用参数    存放在config
-    # 不常改动的    通用参数     直接进行声明
-    # 通用参数指的是所有网络中共有的参数, 如time_sum等
-
     # 处理输入数据
     precision = 32 if (gpus is None and tpu_cores is None) else precision
-    # 获得通用参数
+    # 自动处理:param gpus
+    gpus = 1 if torch.cuda.is_available() and gpus is None and tpu_cores is None else None
+    # 定义不常改动的通用参数
     # TODO 获得最优的batch size
     num_workers = cpu_count()
     # 获得非通用参数
@@ -100,8 +104,7 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=2, batch_size=32, precision=16, seed=1234, dataset_path='./dataset', k_fold=10,
+    main('fit', max_epochs=200, batch_size=128, precision=16, seed=1234, dataset_path='./dataset', k_fold=10,
          kth_fold_start=9,
-         # gpus=1,
          # version_nth=8,
          )

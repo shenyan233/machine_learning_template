@@ -1,14 +1,14 @@
 #!/bin/bash
 
+#cd run
+#cd machineLearningTemplate
+
 module load anaconda/2020.11
-module load cuda/10.2
-module load cudnn/8.1.1.33_CUDA10.2
+module load cuda/11.1
+module load cudnn/8.1.1.33_CUDA11.1
 
-#conda create --name py37 python=3.7
-source activate py37
-
-cd run
-cd machineLearningScaffold
+#conda create --name py39 python=3.9
+source activate py39
 
 #pip install -r requirements.txt
 

@@ -17,6 +17,7 @@ class TrainModule(pl.LightningModule):
         self.net = resnet56()
         self.loss = nn.CrossEntropyLoss()
 
+    # 返回值必须包含loss, loss可以作为dict中的key, 或者直接返回loss
     def training_step(self, batch, batch_idx):
         _, input, label = batch
         label = label.flatten()
