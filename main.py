@@ -24,6 +24,7 @@ def main(stage,
          path_final_save=None,
          every_n_epochs=1,
          save_top_k=1,
+         version_info='无'
          ):
     """
     框架的入口函数. 包含设置超参数, 划分数据集, 选择训练或测试等流程
@@ -50,6 +51,7 @@ def main(stage,
     :param kth_fold_start: 从第几个fold开始, 若使用重载训练, 则kth_fold_start为重载第几个fold, 第一个值为0.
                            非重载训练的情况下, 可以通过调整该值控制训练的次数;
     :param k_fold:
+    :param version_info: 版本信息, 主要记录该版本的网络数据集等
     """
     # 处理输入数据
     precision = 32 if (gpus is None and tpu_cores is None) else precision
@@ -71,7 +73,7 @@ def main(stage,
                                              path_final_save=path_final_save,
                                              every_n_epochs=every_n_epochs, verbose=True,
                                              monitor='Validation acc', save_top_k=save_top_k,
-                                             mode='max')
+                                             mode='max', version_info=version_info)
             training_module = TrainModule(config=config)
             if kth_fold != kth_fold_start or load_checkpoint_path is None:
                 print('进行初始训练')
@@ -99,7 +101,7 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=200, batch_size=128, precision=16, seed=1234, dataset_path='./dataset', k_fold=10,
-         kth_fold_start=9,
+    main('fit', max_epochs=1, batch_size=128, precision=16, seed=1234, dataset_path='./dataset', k_fold=10,
+         kth_fold_start=9, version_info='ResNet-RuLe-CIFAR100',
          # version_nth=8,
          )
