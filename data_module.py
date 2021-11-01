@@ -63,7 +63,21 @@ class DataModule(pl.LightningDataModule):
                           pin_memory=True)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
+        """
+        由于pl计算验证epoch的loss的方法为每个batch的loss求均值, 而每个batch内计算多个样本时同样会求均值,
+        这导致了两次求均值(官方的celoss也会出现该问题). 如果这时存在两个batch的size不同,则会导致每个loss
+        的权重不相等, 导致求loss的错误. 这种情况常常出现, 因为数据量不能整除size, 所以基本上最后一个batch
+        的size与前面的batch的size不同.
+        为了保证验证集计算loss的准确性, 该方法中对于验证集的batch size进行了重新定义.
+        此外, 训练集的反向传播不受影响, 但训练集的loss记录会受影响. 然而, 由于batch_size对训练结果具有较大
+        的影响, 因此, 忽略loss记录的影响, 不对训练集batch size进行重新定义.
+        """
+        val_batch_size = 1
+        for num in range(self.batch_size):
+            if len(self.val_dataset) % (self.batch_size - num) == 0:
+                val_batch_size = self.batch_size - num
+                break
+        return DataLoader(self.val_dataset, batch_size=val_batch_size, shuffle=False, num_workers=self.num_workers,
                           pin_memory=True)
 
     def test_dataloader(self):
