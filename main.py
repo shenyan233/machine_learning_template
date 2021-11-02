@@ -77,12 +77,12 @@ def main(stage,
             training_module = TrainModule(config=config)
             if kth_fold != kth_fold_start or load_checkpoint_path is None:
                 print('进行初始训练')
-                trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores,
+                trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores, log_every_n_steps=1,
                                      logger=logger, precision=precision, callbacks=[save_checkpoint])
                 training_module.load_pretrain_parameters()
             else:
                 print('进行重载训练')
-                trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores,
+                trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores, log_every_n_steps=1,
                                      resume_from_checkpoint='./logs/default' + load_checkpoint_path,
                                      logger=logger, precision=precision, callbacks=[save_checkpoint])
             print('训练过程中请注意gpu利用率等情况')
