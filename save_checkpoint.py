@@ -64,6 +64,7 @@ class SaveCheckpoint(ModelCheckpoint):
 
     def _save_top_k_checkpoint(self, trainer: 'pl.Trainer', monitor_candidates) -> None:
         epoch = monitor_candidates.get("epoch")
+        version_name = self.get_version_name()
         if self.monitor is None or self.save_top_k == 0 or epoch < self.no_save_before_epoch:
             return
 
@@ -71,40 +72,9 @@ class SaveCheckpoint(ModelCheckpoint):
 
         if self.check_monitor_top_k(trainer, current):
             self._update_best_and_save(current, trainer, monitor_candidates)
-            if self.mode == 'max':
-                best_model_value = max([float(item) for item in list(self.best_k_models.values())])
-            else:
-                best_model_value = min([float(item) for item in list(self.best_k_models.values())])
-            version_name = 'version_unkown'
-            for item in re.split(r'[/|\\]', self.dirpath):
-                if 'version_' in item:
-                    version_name = item
-                    break
-            # 保存版本信息(准确率等)到txt中
-            if not os.path.exists('./logs/default/version_info.txt'):
-                with open('./logs/default/version_info.txt', 'w', encoding='utf-8') as f:
-                    f.write(version_name + ' ' + str(best_model_value) + ' ' + self.version_info + '\n')
-            else:
-                with open('./logs/default/version_info.txt', 'r', encoding='utf-8') as f:
-                    info_list = f.readlines()
-                info_list = [item.strip('\n').split(' ') for item in info_list]
-                # 对list进行转置, 转置前行为版本号和其数据, 列为不同的版本
-                info_list = list(map(list, zip(*info_list)))
-                if version_name in info_list[0]:
-                    for cou in range(len(info_list[0])):
-                        if version_name == info_list[0][cou]:
-                            info_list[1][cou] = str(best_model_value)
-                            info_list[2][cou] = self.version_info
-                else:
-                    info_list[0].append(version_name)
-                    info_list[1].append(str(best_model_value))
-                    info_list[2].append(self.version_info)
-                # 对list进行转置
-                info_list = list(map(list, zip(*info_list)))
-                with open('./logs/default/version_info.txt', 'w', encoding='utf-8') as f:
-                    for line in info_list:
-                        line = " ".join(line)
-                        f.write(line + '\n')
+
+            self.save_version_info(version_name, epoch)
+
             # 每次更新ckpt文件后, 将其存放到另一个位置
             if self.path_final_save is not None:
                 zip_dir('./logs/default/' + version_name, './' + version_name + '.zip')
@@ -112,7 +82,6 @@ class SaveCheckpoint(ModelCheckpoint):
                     os.remove(self.path_final_save + '/' + version_name + '.zip')
                 shutil.move('./' + version_name + '.zip', self.path_final_save)
         elif self.verbose:
-            epoch = monitor_candidates.get("epoch")
             step = monitor_candidates.get("step")
             best_model_values = 'now best model:'
             for cou_best_model in self.best_k_models:
@@ -121,3 +90,48 @@ class SaveCheckpoint(ModelCheckpoint):
             rank_zero_info(
                 f"\nEpoch {epoch:d}, global step {step:d}: {self.monitor} ({float(current):f}) was not in "
                 f"top {self.save_top_k:d}({best_model_values:s})")
+
+    def save_version_info(self, version_name, epoch):
+        if self.mode == 'max':
+            best_model_value = max([float(item) for item in list(self.best_k_models.values())])
+        else:
+            best_model_value = min([float(item) for item in list(self.best_k_models.values())])
+        # 保存版本信息(准确率等)到txt中
+        if not os.path.exists('./logs/default/version_info.txt'):
+            with open('./logs/default/version_info.txt', 'w', encoding='utf-8') as f:
+                # 新增的话修改此处
+                f.write(version_name + ' ' + str(epoch) + ' ' + str(best_model_value) + ' ' + self.version_info + '\n')
+        else:
+            with open('./logs/default/version_info.txt', 'r', encoding='utf-8') as f:
+                info_list = f.readlines()
+            info_list = [item.strip('\n').split(' ') for item in info_list]
+            # 对list进行转置, 转置前行为版本号和其数据, 列为不同的版本
+            info_list = list(map(list, zip(*info_list)))
+            if version_name in info_list[0]:
+                for cou in range(len(info_list[0])):
+                    if version_name == info_list[0][cou]:
+                        # 新增的话修改此处
+                        info_list[1][cou] = str(epoch)
+                        info_list[2][cou] = str(best_model_value)
+                        info_list[3][cou] = self.version_info
+
+            else:
+                # 新增的话修改此处
+                info_list[0].append(version_name)
+                info_list[1].append(str(epoch))
+                info_list[2].append(str(best_model_value))
+                info_list[3].append(self.version_info)
+            # 对list进行转置
+            info_list = list(map(list, zip(*info_list)))
+            with open('./logs/default/version_info.txt', 'w', encoding='utf-8') as f:
+                for line in info_list:
+                    line = " ".join(line)
+                    f.write(line + '\n')
+
+    def get_version_name(self):
+        version_name = 'version_unkown'
+        for item in re.split(r'[/|\\]', self.dirpath):
+            if 'version_' in item:
+                version_name = item
+                break
+        return version_name
