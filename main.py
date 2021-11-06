@@ -101,7 +101,7 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=1, batch_size=128, precision=16, seed=1234, dataset_path='./dataset', k_fold=10,
+    main('fit', max_epochs=1, batch_size=128, precision=16, seed=1234, dataset_path='./dataset/cifar-100', k_fold=10,
          kth_fold_start=9, version_info='ResNet-RuLe-CIFAR100',
          # version_nth=8,
          )

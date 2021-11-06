@@ -19,7 +19,8 @@ class SaveCheckpoint(ModelCheckpoint):
                  verbose=False,
                  mode='min',
                  no_save_before_epoch=0,
-                 version_info='无'):
+                 version_info='无',
+                 save_last=False):
         """
         通过回调实现checkpoint的保存逻辑, 同时具有回调函数中定义on_validation_end等功能.
 
@@ -34,14 +35,12 @@ class SaveCheckpoint(ModelCheckpoint):
         :param no_save_before_epoch:
         :param version_info:
         """
-        super().__init__(every_n_epochs=every_n_epochs, verbose=verbose, mode=mode)
-        self.mode = mode
+        super().__init__(every_n_epochs=every_n_epochs, verbose=verbose, mode=mode, monitor=monitor,
+                         save_top_k=save_top_k, save_last=save_last)
         numpy.random.seed(seed)
         self.seeds = numpy.random.randint(0, 2000, max_epochs)
         pl.seed_everything(seed)
         self.path_final_save = path_final_save
-        self.monitor = monitor
-        self.save_top_k = save_top_k
         self.flag_sanity_check = 0
         self.no_save_before_epoch = no_save_before_epoch
         self.version_info = version_info
