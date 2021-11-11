@@ -37,13 +37,15 @@ class SaveCheckpoint(ModelCheckpoint):
         """
         super().__init__(every_n_epochs=every_n_epochs, verbose=verbose, mode=mode, monitor=monitor,
                          save_top_k=save_top_k, save_last=save_last)
-        numpy.random.seed(seed)
-        self.seeds = numpy.random.randint(0, 2000, max_epochs)
-        pl.seed_everything(seed)
         self.path_final_save = path_final_save
-        self.flag_sanity_check = 0
         self.no_save_before_epoch = no_save_before_epoch
         self.version_info = version_info
+        self.seed = seed
+        if seed is not None:
+            numpy.random.seed(seed)
+            self.seeds = numpy.random.randint(0, 2000, max_epochs)
+            pl.seed_everything(seed)
+            self.flag_sanity_check = 0
 
     def on_validation_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
         """
@@ -55,15 +57,16 @@ class SaveCheckpoint(ModelCheckpoint):
         :return:
         """
         # 第一个epoch使用原始输入seed作为种子, 后续的epoch使用seeds中的第epoch-1个作为种子
-        if self.flag_sanity_check == 0:
-            self.flag_sanity_check = 1
-        else:
-            pl.seed_everything(self.seeds[trainer.current_epoch])
+        if self.seed is not None:
+            if self.flag_sanity_check == 0:
+                self.flag_sanity_check = 1
+            else:
+                pl.seed_everything(self.seeds[trainer.current_epoch])
         super().on_validation_end(trainer, pl_module)
 
     def _save_top_k_checkpoint(self, trainer: 'pl.Trainer', monitor_candidates) -> None:
         epoch = monitor_candidates.get("epoch")
-        version_name = self.get_version_name()
+        version_name = self.get_version_name(self.dirpath)
         if self.monitor is None or self.save_top_k == 0 or epoch < self.no_save_before_epoch:
             return
 
@@ -72,7 +75,11 @@ class SaveCheckpoint(ModelCheckpoint):
         if self.check_monitor_top_k(trainer, current):
             self._update_best_and_save(current, trainer, monitor_candidates)
 
-            self.save_version_info(version_name, epoch)
+            if self.mode == 'max':
+                saved_value = max([float('%.2f' % item) for item in list(self.best_k_models.values())])
+            else:
+                saved_value = min([float('%.2f' % item) for item in list(self.best_k_models.values())])
+            self.save_version_info(version_name, epoch, saved_value)
 
             # 每次更新ckpt文件后, 将其存放到另一个位置
             if self.path_final_save is not None:
@@ -90,16 +97,14 @@ class SaveCheckpoint(ModelCheckpoint):
                 f"\nEpoch {epoch:d}, global step {step:d}: {self.monitor} ({float(current):f}) was not in "
                 f"top {self.save_top_k:d}({best_model_values:s})")
 
-    def save_version_info(self, version_name, epoch):
-        if self.mode == 'max':
-            best_model_value = max([float(item) for item in list(self.best_k_models.values())])
-        else:
-            best_model_value = min([float(item) for item in list(self.best_k_models.values())])
+    # epoch为0表示未记录epoch或确实为0, epoch为-1表示这是测试阶段产生的结果
+    def save_version_info(self, version_name, epoch, saved_value):
+
         # 保存版本信息(准确率等)到txt中
         if not os.path.exists('./logs/default/version_info.txt'):
             with open('./logs/default/version_info.txt', 'w', encoding='utf-8') as f:
                 # 新增的话修改此处
-                f.write(version_name + ' ' + str(epoch) + ' ' + str(best_model_value) + ' ' + self.version_info + '\n')
+                f.write(version_name + ' ' + str(epoch) + ' ' + str(saved_value) + ' ' + self.version_info + '\n')
         else:
             with open('./logs/default/version_info.txt', 'r', encoding='utf-8') as f:
                 info_list = f.readlines()
@@ -111,14 +116,13 @@ class SaveCheckpoint(ModelCheckpoint):
                     if version_name == info_list[0][cou]:
                         # 新增的话修改此处
                         info_list[1][cou] = str(epoch)
-                        info_list[2][cou] = str(best_model_value)
+                        info_list[2][cou] = str(saved_value)
                         info_list[3][cou] = self.version_info
-
             else:
                 # 新增的话修改此处
                 info_list[0].append(version_name)
                 info_list[1].append(str(epoch))
-                info_list[2].append(str(best_model_value))
+                info_list[2].append(str(saved_value))
                 info_list[3].append(self.version_info)
             # 对list进行转置
             info_list = list(map(list, zip(*info_list)))
@@ -127,10 +131,15 @@ class SaveCheckpoint(ModelCheckpoint):
                     line = " ".join(line)
                     f.write(line + '\n')
 
-    def get_version_name(self):
+    @staticmethod
+    def get_version_name(dirpath):
         version_name = 'version_unkown'
-        for item in re.split(r'[/|\\]', self.dirpath):
+        for item in re.split(r'[/|\\]', dirpath):
             if 'version_' in item:
                 version_name = item
                 break
         return version_name
+
+    def on_test_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
+        self.save_version_info(self.get_version_name(trainer.log_dir), -1,
+                               float('%.2f' % trainer.logged_metrics['Test acc']))

@@ -14,10 +14,10 @@ def main(stage,
          max_epochs,
          batch_size,
          precision,
-         seed,
          dataset_path,
          k_fold,
          kth_fold_start,
+         seed=None,
          gpus=None,
          tpu_cores=None,
          version_nth=None,
@@ -63,17 +63,18 @@ def main(stage,
     # 获得非通用参数
     config = {'dim_in': 32, }
     for kth_fold in range(kth_fold_start, k_fold):
+        print(f'kth_fold is {k_fold}')
         load_checkpoint_path = get_ckpt_path(version_nth, kth_fold)
         logger = pl_loggers.TensorBoardLogger('logs/')
         dm = DataModule(batch_size=batch_size, num_workers=num_workers, k_fold=k_fold, kth_fold=kth_fold,
                         dataset_path=dataset_path, config=config)
+        # SaveCheckpoint的创建需要在TrainModule之前, 以保证网络参数初始化的确定性
+        save_checkpoint = SaveCheckpoint(seed=seed, max_epochs=max_epochs,
+                                         path_final_save=path_final_save,
+                                         every_n_epochs=every_n_epochs, verbose=True,
+                                         monitor='Validation acc', save_top_k=save_top_k,
+                                         mode='max', version_info=version_info)
         if stage == 'fit':
-            # SaveCheckpoint的创建需要在TrainModule之前, 以保证网络参数初始化的确定性
-            save_checkpoint = SaveCheckpoint(seed=seed, max_epochs=max_epochs,
-                                             path_final_save=path_final_save,
-                                             every_n_epochs=every_n_epochs, verbose=True,
-                                             monitor='Validation acc', save_top_k=save_top_k,
-                                             mode='max', version_info=version_info)
             training_module = TrainModule(config=config)
             if kth_fold != kth_fold_start or load_checkpoint_path is None:
                 print('进行初始训练')
@@ -83,7 +84,7 @@ def main(stage,
             else:
                 print('进行重载训练')
                 trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores, log_every_n_steps=1,
-                                     resume_from_checkpoint='./logs/default' + load_checkpoint_path,
+                                     resume_from_checkpoint=load_checkpoint_path,
                                      logger=logger, precision=precision, callbacks=[save_checkpoint])
             print('训练过程中请注意gpu利用率等情况')
             trainer.fit(training_module, datamodule=dm)
@@ -93,15 +94,16 @@ def main(stage,
             else:
                 print('进行测试')
                 training_module = TrainModule.load_from_checkpoint(
-                    checkpoint_path='./logs/default' + load_checkpoint_path,
+                    checkpoint_path=load_checkpoint_path,
                     **{'config': config})
-                trainer = pl.Trainer(gpus=gpus, tpu_cores=tpu_cores, logger=logger, precision=precision)
+                trainer = pl.Trainer(gpus=gpus, tpu_cores=tpu_cores, logger=logger, precision=precision,
+                                     callbacks=[save_checkpoint])
                 trainer.test(training_module, datamodule=dm)
         # 在cmd中使用tensorboard --logdir logs命令可以查看结果，在Jupyter格式下需要加%前缀
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=1, batch_size=128, precision=16, seed=1234, dataset_path='./dataset/cifar-100', k_fold=10,
-         kth_fold_start=9, version_info='ResNet-RuLe-CIFAR100',
-         # version_nth=8,
+    main('test', max_epochs=1, batch_size=128, precision=16, seed=1234, dataset_path='./dataset/cifar-100', k_fold=10,
+         kth_fold_start=0, version_info='ResNet-RuLe-CIFAR100-test',
+         version_nth=1,
          )
