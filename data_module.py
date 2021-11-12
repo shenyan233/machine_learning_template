@@ -19,13 +19,15 @@ class DataModule(pl.LightningDataModule):
         self.dataset_path = dataset_path
 
     def setup(self, stage=None) -> None:
-        k_fold_dataset_list = self.get_k_fold_dataset_list()
+        # k_fold_dataset_list = self.get_k_fold_dataset_list()
         if stage == 'fit' or stage is None:
-            dataset_train, dataset_val = self.get_fit_dataset_lists(k_fold_dataset_list)
+            # dataset_train, dataset_val = self.get_fit_dataset_lists(k_fold_dataset_list)
+            dataset_train = glob.glob(self.dataset_path + '/train/image/*.png')
+            dataset_val = glob.glob(self.dataset_path + '/test/image/*.png')
             self.train_dataset = CustomDataset(self.dataset_path, dataset_train,  'train', self.config,)
             self.val_dataset = CustomDataset(self.dataset_path, dataset_val,  'val', self.config,)
         if stage == 'test' or stage is None:
-            dataset_test = self.get_test_dataset_lists(k_fold_dataset_list)
+            dataset_test = glob.glob(self.dataset_path + '/test/image/*.png')
             self.test_dataset = CustomDataset(self.dataset_path, dataset_test, 'test', self.config,)
 
     def get_k_fold_dataset_list(self):
@@ -99,7 +101,7 @@ class CustomDataset(Dataset):
                 transforms.ToTensor(),
                 normalize, ])
         elif stage == 'val':
-            stage = 'train'
+            stage = 'test'
             self.trans = transforms.Compose([
                 transforms.ToTensor(),
                 normalize, ])
