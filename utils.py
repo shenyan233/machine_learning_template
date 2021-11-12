@@ -106,5 +106,9 @@ def get_ckpt_path(version_nth: int, kth_fold: int):
         return ckpt_path[0].replace('\\', '/')
 
 
+def fill_list(list, n):
+    return list[:n] + ['default'] * (n - len(list))
+
+
 if __name__ == "__main__":
     get_ckpt_path('version_0')

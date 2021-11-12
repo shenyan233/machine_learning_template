@@ -121,4 +121,4 @@ class CustomDataset(Dataset):
         return image_name, image, label.long()
 
     def __len__(self):
-        return len(self.dataset)
+        return int(len(self.dataset))

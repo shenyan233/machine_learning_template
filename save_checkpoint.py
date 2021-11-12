@@ -4,7 +4,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import pytorch_lightning as pl
 import shutil
 from pytorch_lightning.utilities import rank_zero_info
-from utils import zip_dir
+from utils import zip_dir, fill_list
 import re
 
 
@@ -99,31 +99,30 @@ class SaveCheckpoint(ModelCheckpoint):
 
     # epoch为0表示未记录epoch或确实为0, epoch为-1表示这是测试阶段产生的结果
     def save_version_info(self, version_name, epoch, saved_value):
-
+        # 版本信息表格的属性有: 版本名, epoch, 评价结果, 备注
+        # 新增的话修改此处
+        saved_info = [version_name, str(epoch), str(saved_value), self.version_info]
         # 保存版本信息(准确率等)到txt中
         if not os.path.exists('./logs/default/version_info.txt'):
             with open('./logs/default/version_info.txt', 'w', encoding='utf-8') as f:
-                # 新增的话修改此处
-                f.write(version_name + ' ' + str(epoch) + ' ' + str(saved_value) + ' ' + self.version_info + '\n')
+                f.write(" ".join(saved_info) + '\n')
         else:
             with open('./logs/default/version_info.txt', 'r', encoding='utf-8') as f:
                 info_list = f.readlines()
             info_list = [item.strip('\n').split(' ') for item in info_list]
-            # 对list进行转置, 转置前行为版本号和其数据, 列为不同的版本
+            if len(info_list[0]) < len(saved_info):
+                for cou in range(len(info_list)):
+                    info_list[cou] = fill_list(info_list[cou], len(saved_info))
+            # 对list进行转置, 转置后行为不同属性, 列为不同版本
             info_list = list(map(list, zip(*info_list)))
             if version_name in info_list[0]:
                 for cou in range(len(info_list[0])):
                     if version_name == info_list[0][cou]:
-                        # 新增的话修改此处
-                        info_list[1][cou] = str(epoch)
-                        info_list[2][cou] = str(saved_value)
-                        info_list[3][cou] = self.version_info
+                        for cou_attr in range(1, len(saved_info)):
+                            info_list[cou_attr][cou] = saved_info[cou_attr]
             else:
-                # 新增的话修改此处
-                info_list[0].append(version_name)
-                info_list[1].append(str(epoch))
-                info_list[2].append(str(saved_value))
-                info_list[3].append(self.version_info)
+                for cou_attr in range(len(saved_info)):
+                    info_list[cou_attr].append(saved_info[cou_attr])
             # 对list进行转置
             info_list = list(map(list, zip(*info_list)))
             with open('./logs/default/version_info.txt', 'w', encoding='utf-8') as f:
