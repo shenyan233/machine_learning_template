@@ -56,7 +56,7 @@ def main(stage,
     # 处理输入数据
     precision = 32 if (gpus is None and tpu_cores is None) else precision
     # 自动处理:param gpus
-    gpus = 1 if torch.cuda.is_available() and gpus is None and tpu_cores is None else None
+    gpus = [0] if torch.cuda.is_available() and gpus is None and tpu_cores is None else gpus
     # 定义不常改动的通用参数
     # TODO 获得最优的batch size
     num_workers = min([cpu_count(), 8])

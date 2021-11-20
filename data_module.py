@@ -118,7 +118,8 @@ class CustomDataset(Dataset):
         image = Image.open(image_path)
         image = self.trans(image)
         label = torch.Tensor([int(self.labels[int(image_name.strip('.png'))].strip('\n'))])
-        return image_name, image, label.long()
+        # 不需要输出image_name, 因此这里置为0. 如果置为str类型, 会导致错误的提示, 这是pl的BUG, 后续BUG解决后可以不使用0代替
+        return 0, image, label.long()
 
     def __len__(self):
         return int(len(self.dataset))
