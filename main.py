@@ -63,7 +63,7 @@ def main(stage,
     # 获得非通用参数
     config = {'dim_in': 32, }
     for kth_fold in range(kth_fold_start, k_fold):
-        print(f'the count of fold is {kth_fold}')
+        print(f'fold的数量为{kth_fold}')
         load_checkpoint_path = get_ckpt_path(version_nth, kth_fold)
         logger = pl_loggers.TensorBoardLogger('logs/')
         dm = DataModule(batch_size=batch_size, num_workers=num_workers, k_fold=k_fold, kth_fold=kth_fold,
@@ -86,7 +86,6 @@ def main(stage,
                 trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores, log_every_n_steps=1,
                                      resume_from_checkpoint=load_checkpoint_path,
                                      logger=logger, precision=precision, callbacks=[save_checkpoint])
-            print('训练过程中请注意gpu利用率等情况')
             trainer.fit(training_module, datamodule=dm)
         if stage == 'test':
             if load_checkpoint_path is None:
@@ -103,7 +102,9 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=1, batch_size=128, precision=16, seed=1234, dataset_path='./dataset/cifar-100', k_fold=10,
-         kth_fold_start=9, version_info='ResNet-RuLe-CIFAR100-test',
+    main('fit', max_epochs=200, batch_size=128, precision=16, dataset_path='./dataset/cifar-100', k_fold=10,
+         kth_fold_start=9,
+         version_info='ResNet56_CIFAR100_baseline',
+         gpus=[1],
          # version_nth=1,
          )

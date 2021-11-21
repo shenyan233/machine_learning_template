@@ -28,13 +28,8 @@ If you use this implementation in you work, please don't forget to mention the
 author, Yerlan Idelbayev.
 '''
 import math
-
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.nn.init as init
-
-from torch.autograd import Variable
 
 __all__ = ['ResNet', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110', 'resnet1202']
 
@@ -42,11 +37,6 @@ __all__ = ['ResNet', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110'
 def _weights_init(m):
     if isinstance(m, nn.Linear):
         nn.init.kaiming_normal_(m.weight)
-
-        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(m.weight)
-        bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-        nn.init.uniform_(m.bias, -bound, bound)
-
     elif isinstance(m, nn.Conv2d):
         nn.init.kaiming_normal_(m.weight)
 
@@ -172,7 +162,7 @@ def accuracy(output, target, topk=(1,)):
 
     res = []
     for k in topk:
-        correct_k = correct[:k].contiguous().view(-1).float().sum(0)
+        correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
 

@@ -1,8 +1,5 @@
 import time
-
-import numpy
 import pytorch_lightning as pl
-from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 from torch import nn
 import torch
 
@@ -58,10 +55,10 @@ class TrainModule(pl.LightningModule):
     def configure_optimizers(self):
         lr = 0.1
         optimizer = torch.optim.SGD(self.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[91, 137])
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100, 150], last_epoch=-1)
         # 仅在第一个epoch使用0.01的学习率
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr * 0.1
+        # for param_group in optimizer.param_groups:
+        #     param_group['lr'] = lr * 0.1
         return [optimizer], [lr_scheduler]
 
     def load_pretrain_parameters(self):
