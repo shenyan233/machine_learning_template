@@ -42,7 +42,7 @@ class IOU:
         self.hist = None
 
     def add_data(self, preds, label):
-        self.hist += torch.zeros((self.n_classes, self.n_classes)).type_as(
+        self.hist = torch.zeros((self.n_classes, self.n_classes)).type_as(
             preds) if self.hist is None else self.hist + fast_hist(preds.int(), label, self.n_classes)
 
     def get_miou(self):

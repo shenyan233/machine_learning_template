@@ -24,7 +24,8 @@ def main(stage,
          path_final_save=None,
          every_n_epochs=1,
          save_top_k=1,
-         version_info='无'
+         version_info='无',
+         accumulate_grad_batches=1,
          ):
     """
     框架的入口函数. 包含设置超参数, 划分数据集, 选择训练或测试等流程
@@ -35,6 +36,7 @@ def main(stage,
     不常改动的    通用参数     直接进行声明
     * 通用参数指的是所有网络中共有的参数, 如time_sum等
 
+    :param accumulate_grad_batches:
     :param stage: 表示处于训练阶段还是测试阶段, fit表示训练, test表示测试
     :param max_epochs:
     :param batch_size:
@@ -79,11 +81,13 @@ def main(stage,
             if kth_fold != kth_fold_start or load_checkpoint_path is None:
                 print('进行初始训练')
                 trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores, log_every_n_steps=1,
+                                     accumulate_grad_batches=accumulate_grad_batches,
                                      logger=logger, precision=precision, callbacks=[save_checkpoint])
                 training_module.load_pretrain_parameters()
             else:
                 print('进行重载训练')
                 trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores, log_every_n_steps=1,
+                                     accumulate_grad_batches=accumulate_grad_batches,
                                      resume_from_checkpoint=load_checkpoint_path,
                                      logger=logger, precision=precision, callbacks=[save_checkpoint])
             trainer.fit(training_module, datamodule=dm)
