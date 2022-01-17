@@ -1,27 +1,9 @@
 # 包含一些与网络无关的工具
 import glob
 import os
-import random
 import zipfile
 import cv2
 import torch
-
-
-def get_dataset_list(dataset_path):
-    if not os.path.exists(dataset_path + '/dataset_list.txt'):
-        all_list = glob.glob(dataset_path + '/labels' + '/*.png')
-        random.shuffle(all_list)
-        all_list = [os.path.basename(item.replace('\\', '/')) for item in all_list]
-        written = all_list
-
-        with open(dataset_path + '/dataset_list.txt', 'w', encoding='utf-8') as f:
-            for line in written:
-                f.write(line + '\n')
-            print('已生成新的数据list')
-        return all_list
-    else:
-        all_list = open(dataset_path + '/all_dataset_list.txt').readlines()
-        return all_list
 
 
 def zip_dir(dir_path, zip_path):
@@ -111,4 +93,4 @@ def fill_list(list, n):
 
 
 if __name__ == "__main__":
-    get_ckpt_path('version_0')
+    pass
