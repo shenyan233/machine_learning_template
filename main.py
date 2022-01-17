@@ -47,7 +47,7 @@ def main(stage,
     :param gpus:
     :param tpu_cores:
     :param version_nth: 不论是重载训练还是测试, 固定为该folds的第一个版本的版本号
-    :param path_final_save:
+    :param path_final_save: 每次更新ckpt文件后, 将其存放到另一个位置
     :param every_n_epochs: 每n个epoch设置一个检查点
     :param save_top_k:
     :param kth_fold_start: 从第几个fold开始, 若使用重载训练, 则kth_fold_start为重载第几个fold, 第一个值为0.
@@ -60,7 +60,6 @@ def main(stage,
     # 自动处理:param gpus
     gpus = [0] if torch.cuda.is_available() and gpus is None and tpu_cores is None else gpus
     # 定义不常改动的通用参数
-    # TODO 获得最优的batch size
     num_workers = min([cpu_count(), 8])
     # 获得非通用参数
     config = {'dim_in': 32, }
@@ -106,9 +105,9 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=200, batch_size=128, precision=16, dataset_path='./dataset/cifar-100', k_fold=10,
-         kth_fold_start=9,
-         version_info='ResNet56_CIFAR100_baseline',
-         gpus=[1],
+    main('fit', max_epochs=30, batch_size=32, precision=16, dataset_path='./dataset', k_fold=5,
+         kth_fold_start=4,
+         version_info='baseline',
+         # gpus=[1],
          # version_nth=1,
          )
