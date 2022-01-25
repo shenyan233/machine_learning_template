@@ -19,7 +19,9 @@ def per_class_iu(hist):
     return (torch.diag(hist)) / (torch.sum(hist, 1) + torch.sum(hist, 0) - torch.diag(hist))
 
 
-def get_ious(pred, label, n_classes):
+def get_ious(pred, label, n_classes, softmax=True):
+    if softmax:
+        pred = torch.argmax(torch.softmax(pred, dim=1), dim=1)
     hist = fast_hist(pred.flatten(), label.flatten(), n_classes)
     IoUs = per_class_iu(hist)
     mIoU = torch_nanmean(IoUs[1:n_classes])
