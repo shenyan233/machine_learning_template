@@ -57,6 +57,7 @@ def main(stage,
     # 处理输入数据
     precision = 32 if (gpus is None and tpu_cores is None) else precision
     # 自动处理:param gpus
+    assert gpus != 0, '无gpu则gpus置为None'
     gpus = 1 if torch.cuda.is_available() and gpus is None and tpu_cores is None else gpus
     # 定义不常改动的通用参数
     num_workers = min([cpu_count(), 8])
@@ -78,8 +79,8 @@ def main(stage,
         if stage == 'fit':
             training_module = TrainModule(config=config)
             trainer = pl.Trainer(logger=logger, precision=precision, callbacks=[save_checkpoint],
-                                 gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=True,
-                                 strategy='ddp_sharded',  # 可以使用offload模式, 进一步降低内存占用
+                                 gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=False if gpus is None else True,
+                                 strategy=None if gpus is None else 'ddp_sharded',  # 可以使用offload模式, 进一步降低内存占用
                                  max_epochs=max_epochs, log_every_n_steps=1,
                                  accumulate_grad_batches=accumulate_grad_batches,
                                  )
@@ -99,7 +100,7 @@ def main(stage,
                     checkpoint_path=load_checkpoint_path,
                     **{'config': config})
                 trainer = pl.Trainer(logger=logger, precision=precision, callbacks=[save_checkpoint],
-                                     gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=True,
+                                     gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=False if gpus is None else True,
                                      )
                 trainer.test(training_module, datamodule=dm)
         # 在cmd中使用tensorboard --logdir logs命令可以查看结果，在Jupyter格式下需要加%前缀
@@ -107,7 +108,7 @@ def main(stage,
 
 if __name__ == "__main__":
     main('fit', max_epochs=30, precision=16, dataset_path='./dataset/20190813_icmim_dataset',
-         gpus=2,
+         # gpus=2,
          batch_size=2, accumulate_grad_batches=1,
          k_fold=5, kth_fold_start=4,  # version_nth=1,
          version_info='baseline',
