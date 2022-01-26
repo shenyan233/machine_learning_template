@@ -1,5 +1,4 @@
 import torch
-
 from save_checkpoint import SaveCheckpoint
 from data_module import DataModule
 from pytorch_lightning import loggers as pl_loggers
@@ -58,11 +57,12 @@ def main(stage,
     # 处理输入数据
     precision = 32 if (gpus is None and tpu_cores is None) else precision
     # 自动处理:param gpus
-    gpus = [0] if torch.cuda.is_available() and gpus is None and tpu_cores is None else gpus
+    gpus = 1 if torch.cuda.is_available() and gpus is None and tpu_cores is None else gpus
     # 定义不常改动的通用参数
     num_workers = min([cpu_count(), 8])
     # 获得非通用参数
-    config = {'dim_in': 32, }
+    config = {'dim_in': [256, 256, 64],
+              'n_classes': 2}
     for kth_fold in range(kth_fold_start, k_fold):
         print(f'fold的数量为{kth_fold}')
         load_checkpoint_path = get_ckpt_path(version_nth, kth_fold)
@@ -77,19 +77,19 @@ def main(stage,
                                          mode='max', version_info=version_info)
         if stage == 'fit':
             training_module = TrainModule(config=config)
+            trainer = pl.Trainer(logger=logger, precision=precision, callbacks=[save_checkpoint],
+                                 gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=True,
+                                 strategy='ddp_sharded',  # 可以使用offload模式, 进一步降低内存占用
+                                 max_epochs=max_epochs, log_every_n_steps=1,
+                                 accumulate_grad_batches=accumulate_grad_batches,
+                                 )
             if kth_fold != kth_fold_start or load_checkpoint_path is None:
                 print('进行初始训练')
-                trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores, log_every_n_steps=1,
-                                     accumulate_grad_batches=accumulate_grad_batches,
-                                     logger=logger, precision=precision, callbacks=[save_checkpoint])
                 training_module.load_pretrain_parameters()
+                trainer.fit(training_module, datamodule=dm)
             else:
                 print('进行重载训练')
-                trainer = pl.Trainer(max_epochs=max_epochs, gpus=gpus, tpu_cores=tpu_cores, log_every_n_steps=1,
-                                     accumulate_grad_batches=accumulate_grad_batches,
-                                     resume_from_checkpoint=load_checkpoint_path,
-                                     logger=logger, precision=precision, callbacks=[save_checkpoint])
-            trainer.fit(training_module, datamodule=dm)
+                trainer.fit(training_module, datamodule=dm, ckpt_path=load_checkpoint_path)
         if stage == 'test':
             if load_checkpoint_path is None:
                 print('未载入权重信息，不能测试')
@@ -98,16 +98,17 @@ def main(stage,
                 training_module = TrainModule.load_from_checkpoint(
                     checkpoint_path=load_checkpoint_path,
                     **{'config': config})
-                trainer = pl.Trainer(gpus=gpus, tpu_cores=tpu_cores, logger=logger, precision=precision,
-                                     callbacks=[save_checkpoint])
+                trainer = pl.Trainer(logger=logger, precision=precision, callbacks=[save_checkpoint],
+                                     gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=True,
+                                     )
                 trainer.test(training_module, datamodule=dm)
         # 在cmd中使用tensorboard --logdir logs命令可以查看结果，在Jupyter格式下需要加%前缀
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=30, batch_size=32, precision=16, dataset_path='./dataset', k_fold=5,
-         kth_fold_start=4,
+    main('fit', max_epochs=30, precision=16, dataset_path='./dataset/20190813_icmim_dataset',
+         gpus=2,
+         batch_size=2, accumulate_grad_batches=1,
+         k_fold=5, kth_fold_start=4,  # version_nth=1,
          version_info='baseline',
-         # gpus=[1],
-         # version_nth=1,
          )
