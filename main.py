@@ -57,12 +57,17 @@ def main(stage,
     # 处理输入数据
     precision = 32 if (gpus is None and tpu_cores is None) else precision
     # 自动处理:param gpus
-    assert gpus != 0, '无gpu则gpus置为None'
-    gpus = 1 if torch.cuda.is_available() and gpus is None and tpu_cores is None else gpus
+    if torch.cuda.is_available() and gpus is None and tpu_cores is None:
+        gpus = 1
+    else:
+        if gpus == 0:
+            gpus = None
+        else:
+            gpus = gpus
     # 定义不常改动的通用参数
     num_workers = min([cpu_count(), 8])
     # 获得非通用参数
-    config = {'dim_in': [256, 256, 64],
+    config = {'dim_in': 24,
               'n_classes': 2}
     for kth_fold in range(kth_fold_start, k_fold):
         print(f'fold的数量为{kth_fold}')
@@ -107,7 +112,7 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=30, precision=16, dataset_path='./dataset/20190813_icmim_dataset',
+    main('fit', max_epochs=30, precision=16, dataset_path='./dataset/cifar-100',
          # gpus=2,
          batch_size=2, accumulate_grad_batches=1,
          k_fold=5, kth_fold_start=4,  # version_nth=1,
