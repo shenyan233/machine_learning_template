@@ -1,11 +1,5 @@
 # 包含一些与网络无关的工具
 import glob
-import os
-import zipfile
-import cv2
-import torch
-
-from train_model import TrainModule
 
 
 def zip_dir(dir_path, zip_path):
@@ -15,6 +9,9 @@ def zip_dir(dir_path, zip_path):
     :param dir_path: 目标文件夹路径
     :param zip_path: 压缩后的文件夹路径
     """
+    import zipfile
+    import os
+
     ziper = zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED)
     for root, dirnames, filenames in os.walk(dir_path):
         file_path = root.replace(dir_path, '')  # 去掉根路径，只对目标文件夹下的文件及文件夹进行压缩
@@ -65,10 +62,15 @@ def visual_label(dataset_path, n_classes):
     :param dataset_path: 地址
     :param n_classes: 类别数
     """
+    import os
+    from torchvision import transforms
+    import cv2
+    import torch
+
     label_path = os.path.join(dataset_path, 'test', 'labels').replace('\\', '/')
     label_image_list = glob.glob(label_path + '/*.png')
     label_image_list.sort()
-    from torchvision import transforms
+
     trans_factory = transforms.ToPILImage()
     if not os.path.exists(dataset_path + '/visual_label'):
         os.makedirs(dataset_path + '/visual_label')
@@ -81,6 +83,8 @@ def visual_label(dataset_path, n_classes):
 
 
 def get_ckpt_path(version_nth: int):
+
+
     if version_nth is None:
         return None
     else:
@@ -95,6 +99,9 @@ def fill_list(list, n):
 
 
 def ckpt2onnx(version_nth):
+    from train_model import TrainModule
+    import torch
+
     checkpoint_path = get_ckpt_path(version_nth)
     # 获得非通用参数
     config = {'dim_in': 24,
@@ -105,9 +112,33 @@ def ckpt2onnx(version_nth):
         **{'config': config})
     # 输入参数
     input_sample = torch.randn((1, 3, 24, 24))
-    training_module.to_onnx('model.onnx', input_sample, opset_version=11, export_params=True)
+    training_module.to_onnx(f'./logs/default/version_{version_nth}/version_{version_nth}.onnx', input_sample,
+                            opset_version=11, export_params=True)
+
+
+def onnx2tf(version_nth):
+    from onnx_tf.backend import prepare
+    import onnx
+
+    save_path = f'./logs/default/version_{version_nth}'
+    onnx_path = glob.glob(save_path+'/*.onnx')[0].replace('\\', '/')
+    onnx_model = onnx.load(onnx_path)  # load onnx model
+    tf_rep = prepare(onnx_model)  # prepare tf representation
+    tf_rep.export_graph(save_path + f"/version_{version_nth}.tf")  # export the model
+
+def tf2tflite(version_nth):
+    import tensorflow as tf
+
+    save_path = f'./logs/default/version_{version_nth}'
+    tf_path = save_path + f"/version_{version_nth}.tf"
+    tflite_path = save_path + f"/version_{version_nth}.tflite"
+    converter = tf.lite.TFLiteConverter.from_saved_model(tf_path)
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    tf_lite_model = converter.convert()
+    with open(tflite_path, 'wb') as f:
+        f.write(tf_lite_model)
 
 
 if __name__ == "__main__":
-    ckpt2onnx(0)
+    tf2tflite(0)
     pass
