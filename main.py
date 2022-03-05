@@ -71,7 +71,7 @@ def main(stage,
               'n_classes': 2}
     for kth_fold in range(kth_fold_start, k_fold):
         print(f'fold的数量为{kth_fold}')
-        load_checkpoint_path = get_ckpt_path(version_nth, kth_fold)
+        load_checkpoint_path = get_ckpt_path(version_nth + kth_fold)
         logger = pl_loggers.TensorBoardLogger('logs/')
         dm = DataModule(batch_size=batch_size, num_workers=num_workers, k_fold=k_fold, kth_fold=kth_fold,
                         dataset_path=dataset_path, config=config)
@@ -112,7 +112,7 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=30, precision=16, dataset_path='./dataset/cifar-100',
+    main('test', max_epochs=30, precision=16, dataset_path='./dataset/cifar-100',
          # gpus=2,
          batch_size=2, accumulate_grad_batches=1,
          k_fold=5, kth_fold_start=4,  # version_nth=1,

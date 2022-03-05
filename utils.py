@@ -5,6 +5,8 @@ import zipfile
 import cv2
 import torch
 
+from train_model import TrainModule
+
 
 def zip_dir(dir_path, zip_path):
     """
@@ -78,11 +80,11 @@ def visual_label(dataset_path, n_classes):
             quality=95)
 
 
-def get_ckpt_path(version_nth: int, kth_fold: int):
+def get_ckpt_path(version_nth: int):
     if version_nth is None:
         return None
     else:
-        version_name = f'version_{version_nth + kth_fold}'
+        version_name = f'version_{version_nth}'
         checkpoints_path = './logs/default/' + version_name + '/checkpoints'
         ckpt_path = glob.glob(checkpoints_path + '/*.ckpt')
         return ckpt_path[0].replace('\\', '/')
@@ -92,5 +94,20 @@ def fill_list(list, n):
     return list[:n] + ['default'] * (n - len(list))
 
 
+def ckpt2onnx(version_nth):
+    checkpoint_path = get_ckpt_path(version_nth)
+    # 获得非通用参数
+    config = {'dim_in': 24,
+              'n_classes': 2}
+    # 构建网络
+    training_module = TrainModule.load_from_checkpoint(
+        checkpoint_path=checkpoint_path,
+        **{'config': config})
+    # 输入参数
+    input_sample = torch.randn((1, 3, 24, 24))
+    training_module.to_onnx('model.onnx', input_sample, opset_version=11, export_params=True)
+
+
 if __name__ == "__main__":
+    ckpt2onnx(0)
     pass
