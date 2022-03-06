@@ -83,8 +83,6 @@ def visual_label(dataset_path, n_classes):
 
 
 def get_ckpt_path(version_nth: int):
-
-
     if version_nth is None:
         return None
     else:
@@ -104,16 +102,16 @@ def ckpt2onnx(version_nth):
 
     checkpoint_path = get_ckpt_path(version_nth)
     # 获得非通用参数
-    config = {'dim_in': 24,
-              'n_classes': 2}
+    config = {'dim_in': 32,
+              'n_classes': 100}
     # 构建网络
     training_module = TrainModule.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
         **{'config': config})
     # 输入参数
-    input_sample = torch.randn((1, 3, 24, 24))
+    input_sample = torch.randn((1, 3, 32, 32))
     training_module.to_onnx(f'./logs/default/version_{version_nth}/version_{version_nth}.onnx', input_sample,
-                            opset_version=11, export_params=True)
+                            opset_version=14, export_params=True)
 
 
 def onnx2tf(version_nth):
@@ -121,10 +119,11 @@ def onnx2tf(version_nth):
     import onnx
 
     save_path = f'./logs/default/version_{version_nth}'
-    onnx_path = glob.glob(save_path+'/*.onnx')[0].replace('\\', '/')
+    onnx_path = glob.glob(save_path + '/*.onnx')[0].replace('\\', '/')
     onnx_model = onnx.load(onnx_path)  # load onnx model
     tf_rep = prepare(onnx_model)  # prepare tf representation
     tf_rep.export_graph(save_path + f"/version_{version_nth}.tf")  # export the model
+
 
 def tf2tflite(version_nth):
     import tensorflow as tf
@@ -137,6 +136,16 @@ def tf2tflite(version_nth):
     tf_lite_model = converter.convert()
     with open(tflite_path, 'wb') as f:
         f.write(tf_lite_model)
+
+
+def test_onnx(input):
+    import onnxruntime as rt
+    model = rt.InferenceSession("./logs/default/version_0/version_0.onnx")
+    input_name = model.get_inputs()
+    output_name = None
+    # 如果出现Invalid Feed Input Name: 这一错误，可通过Netron软件观察输入名称，改变model内的输入输出的名称
+    result = model.run(output_name, {input_name[0].name: input})
+    return result[0]
 
 
 if __name__ == "__main__":
