@@ -115,6 +115,6 @@ if __name__ == "__main__":
     main('test', max_epochs=30, precision=16, dataset_path='./dataset/cifar-100',
          # gpus=2,
          batch_size=2, accumulate_grad_batches=1,
-         k_fold=5, kth_fold_start=4,  # version_nth=1,
+         k_fold=1, kth_fold_start=0,  version_nth=0,
          version_info='baseline',
          )

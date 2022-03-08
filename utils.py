@@ -148,6 +148,36 @@ def test_onnx(input):
     return result[0]
 
 
+# 输入为numpy矩阵
+def test_tflite():
+    from PIL import Image
+    import numpy
+    from torchvision import transforms
+
+    image = Image.open("./dataset/cifar-100/test/image/0.png")
+    trans = transforms.ToTensor()
+    image = trans(image)
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+    image = normalize(image)
+    image = image.numpy()
+    input = image[numpy.newaxis, :, :, :]
+
+    import tensorflow as tf
+    # Load TFLite model and allocate tensors.
+    interpreter = tf.lite.Interpreter(model_path="./logs/default/version_0/version_0.tflite")
+    interpreter.allocate_tensors()
+
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    index = input_details[0]['index']
+    interpreter.set_tensor(index, input)
+    interpreter.invoke()
+    output_data = interpreter.get_tensor(output_details[0]['index'])
+    return output_data
+
+
 if __name__ == "__main__":
-    tf2tflite(0)
+    test_tflite()
     pass

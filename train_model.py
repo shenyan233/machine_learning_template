@@ -50,6 +50,9 @@ class TrainModule(pl.LightningModule):
             print(f'\n推理时间为: {self.time_sum:f}')
         else:
             pred = self.net(input)
+        # from utils import test_onnx
+        # import numpy
+        # result = test_onnx(input.numpy())
         loss = self.loss(pred, label)
         self.log("Test loss", loss)
         acc = accuracy(pred, label)[0]
