@@ -96,22 +96,19 @@ def fill_list(list, n):
     return list[:n] + ['default'] * (n - len(list))
 
 
-def ckpt2onnx(version_nth):
+def ckpt2onnx(version_nth, input_size, config):
     from train_model import TrainModule
     import torch
 
     checkpoint_path = get_ckpt_path(version_nth)
-    # 获得非通用参数
-    config = {'dim_in': 32,
-              'n_classes': 100}
     # 构建网络
     training_module = TrainModule.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
         **{'config': config})
     # 输入参数
-    input_sample = torch.randn((1, 3, 32, 32))
+    input_sample = torch.randn(input_size)
     training_module.to_onnx(f'./logs/default/version_{version_nth}/version_{version_nth}.onnx', input_sample,
-                            opset_version=14, export_params=True)
+                            opset_version=12, export_params=True)
 
 
 def onnx2tf(version_nth):
@@ -132,7 +129,13 @@ def tf2tflite(version_nth):
     tf_path = save_path + f"/version_{version_nth}.tf"
     tflite_path = save_path + f"/version_{version_nth}.tflite"
     converter = tf.lite.TFLiteConverter.from_saved_model(tf_path)
+
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    converter.target_ops = [tf.lite.OpsSet.TFLITE_BUILTINS, tf.lite.OpsSet.SELECT_TF_OPS]
+    converter.target_spec.supported_types = [tf.compat.v1.lite.constants.FLOAT16]
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS, tf.lite.OpsSet.SELECT_TF_OPS]
+    converter.allow_custom_ops = True
+
     tf_lite_model = converter.convert()
     with open(tflite_path, 'wb') as f:
         f.write(tf_lite_model)
@@ -149,20 +152,7 @@ def test_onnx(input):
 
 
 # 输入为numpy矩阵
-def test_tflite():
-    from PIL import Image
-    import numpy
-    from torchvision import transforms
-
-    image = Image.open("./dataset/cifar-100/test/image/0.png")
-    trans = transforms.ToTensor()
-    image = trans(image)
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-    image = normalize(image)
-    image = image.numpy()
-    input = image[numpy.newaxis, :, :, :]
-
+def test_tflite(input):
     import tensorflow as tf
     # Load TFLite model and allocate tensors.
     interpreter = tf.lite.Interpreter(model_path="./logs/default/version_0/version_0.tflite")
@@ -179,5 +169,4 @@ def test_tflite():
 
 
 if __name__ == "__main__":
-    test_tflite()
     pass
