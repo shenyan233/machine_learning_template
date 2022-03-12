@@ -99,7 +99,7 @@ class SaveCheckpoint(ModelCheckpoint):
 
     # epoch为0表示未记录epoch或确实为0, epoch为-1表示这是测试阶段产生的结果
     def save_version_info(self, version_name, epoch, saved_value):
-        # 版本信息表格的属性有: 版本名, epoch, 评价结果, 备注
+        # 版本信息表格的属性有: 版本名, epoch或测试结果, 评价结果, 备注
         # 新增的话修改此处
         saved_info = [version_name, str(epoch), str(saved_value), self.version_info]
         # 保存版本信息(准确率等)到txt中
@@ -142,5 +142,9 @@ class SaveCheckpoint(ModelCheckpoint):
         return version_name
 
     def on_test_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        self.save_version_info(self.get_version_name(trainer.log_dir), -1,
+        num_digits = 3
+        test_result = f'{round(pl_module.time_sum, num_digits)}|{round(pl_module.quantile25, num_digits)}|' \
+                      f'{round(pl_module.quantile50, num_digits)}|{round(pl_module.quantile75, num_digits)}|' \
+                      f'{round(pl_module.acc_min, num_digits)}|{round(pl_module.acc_max, num_digits)} '
+        self.save_version_info(self.get_version_name(trainer.log_dir), test_result,
                                float('%.2f' % trainer.logged_metrics['Test acc']))
