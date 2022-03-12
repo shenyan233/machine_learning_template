@@ -56,6 +56,7 @@ def main(stage,
     """
     # 处理输入数据
     precision = 32 if ((gpus is None or gpus == 0) and tpu_cores is None) else precision
+    version_info = version_info.replace(' ', '|')
     # 自动处理:param gpus
     if torch.cuda.is_available() and gpus is None and tpu_cores is None:
         gpus = 1

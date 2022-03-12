@@ -113,6 +113,8 @@ class SaveCheckpoint(ModelCheckpoint):
             if len(info_list[0]) < len(saved_info):
                 for cou in range(len(info_list)):
                     info_list[cou] = fill_list(info_list[cou], len(saved_info))
+            else:
+                saved_info = fill_list(saved_info, len(info_list[0]))
             # 对list进行转置, 转置后行为不同属性, 列为不同版本
             info_list = list(map(list, zip(*info_list)))
             if version_name in info_list[0]:
