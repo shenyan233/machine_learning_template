@@ -75,7 +75,8 @@ def main(stage,
     config = params.config
     for kth_fold in range(kth_fold_start, k_fold):
         print(f'fold的数量为{kth_fold}')
-        load_checkpoint_path = get_ckpt_path(version_nth + kth_fold)
+        if version_nth is not None:
+            load_checkpoint_path = get_ckpt_path(version_nth + kth_fold)
         logger = pl_loggers.TensorBoardLogger('logs/')
         dm = DataModule(batch_size=batch_size, num_workers=num_workers, k_fold=k_fold, kth_fold=kth_fold,
                         dataset_path=dataset_path, config=config)
@@ -116,9 +117,9 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('test', max_epochs=30, precision=16, dataset_path='./dataset/cifar-100', model_name='res_net',
+    main('fit', max_epochs=30, precision=16, dataset_path='./dataset/cifar-100', model_name='res_net',
          # gpus=2,
          batch_size=2, accumulate_grad_batches=1,
-         k_fold=1, kth_fold_start=0,  version_nth=0,
+         k_fold=1, kth_fold_start=0,  # version_nth=0,
          version_info='baseline',
          )

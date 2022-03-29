@@ -1,3 +1,4 @@
+import importlib
 import time
 
 import numpy
@@ -5,8 +6,6 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 from torch import nn
 import torch
-
-from network.res_net.res_net import resnet56, accuracy
 
 
 class TrainModule(pl.LightningModule):
@@ -21,7 +20,9 @@ class TrainModule(pl.LightningModule):
     def __init__(self, config=None):
         super().__init__()
         self.config = config
-        self.net = resnet56()
+        imported = importlib.import_module('network.%(model_name)s' % config)
+        self.net = imported.resnet56()
+        self.accuracy = imported.accuracy
         self.loss = nn.CrossEntropyLoss()
 
     def forward(self, input):
@@ -35,7 +36,7 @@ class TrainModule(pl.LightningModule):
         pred = self.net(input)
         loss = self.loss(pred, label)
         self.log("Training loss", loss)
-        acc = accuracy(pred, label)[0]
+        acc = self.accuracy(pred, label)[0]
         self.log("Training acc", acc)
         return loss
 
@@ -45,7 +46,7 @@ class TrainModule(pl.LightningModule):
         pred = self.net(input)
         loss = self.loss(pred, label)
         self.log("Validation loss", loss)
-        acc = accuracy(pred, label)[0]
+        acc = self.accuracy(pred, label)[0]
         self.log("Validation acc", acc)
         return loss
 
@@ -62,7 +63,7 @@ class TrainModule(pl.LightningModule):
             pred = self.net(input)
         loss = self.loss(pred, label)
         self.log("Test loss", loss)
-        acc = accuracy(pred, label)[0]
+        acc = self.accuracy(pred, label)[0]
         self.log("Test acc", acc)
         return input, label, pred
 
