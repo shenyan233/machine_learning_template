@@ -1,3 +1,5 @@
+import importlib
+
 import torch
 from save_checkpoint import SaveCheckpoint
 from data_module import DataModule
@@ -5,7 +7,6 @@ from pytorch_lightning import loggers as pl_loggers
 import pytorch_lightning as pl
 from train_model import TrainModule
 from multiprocessing import cpu_count
-
 from utils import get_ckpt_path
 
 
@@ -16,6 +17,7 @@ def main(stage,
          dataset_path,
          k_fold,
          kth_fold_start,
+         model_name,
          seed=None,
          gpus=None,
          tpu_cores=None,
@@ -53,6 +55,7 @@ def main(stage,
                            非重载训练的情况下, 可以通过调整该值控制训练的次数;
     :param k_fold:
     :param version_info: 版本信息, 主要记录该版本的网络数据集等
+    :param model_name: 模型名称，用于自动读取config，读取地址为./network/{model_name}/config.py
     """
     # 处理输入数据
     precision = 32 if ((gpus is None or gpus == 0) and tpu_cores is None) else precision
@@ -67,9 +70,9 @@ def main(stage,
             gpus = gpus
     # 定义不常改动的通用参数
     num_workers = min([cpu_count(), 8])
-    # 获得非通用参数
-    config = {'dim_in': 24,
-              'n_classes': 2}
+    # 获得网络参数
+    params = importlib.import_module(f'network.{model_name}.config')
+    config = params.config
     for kth_fold in range(kth_fold_start, k_fold):
         print(f'fold的数量为{kth_fold}')
         load_checkpoint_path = get_ckpt_path(version_nth + kth_fold)
@@ -113,7 +116,7 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('test', max_epochs=30, precision=16, dataset_path='./dataset/cifar-100',
+    main('test', max_epochs=30, precision=16, dataset_path='./dataset/cifar-100', model_name='res_net',
          # gpus=2,
          batch_size=2, accumulate_grad_batches=1,
          k_fold=1, kth_fold_start=0,  version_nth=0,

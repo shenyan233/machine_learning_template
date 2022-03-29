@@ -6,7 +6,7 @@ from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 from torch import nn
 import torch
 
-from network.res_net import resnet56, accuracy
+from network.res_net.res_net import resnet56, accuracy
 
 
 class TrainModule(pl.LightningModule):
