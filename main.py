@@ -85,7 +85,7 @@ def main(stage,
                                          path_final_save=path_final_save,
                                          every_n_epochs=every_n_epochs, verbose=True,
                                          monitor='Validation acc', save_top_k=save_top_k,
-                                         mode='max', version_info=version_info)
+                                         mode='max', version_info=version_info, config=config)
         if stage == 'fit':
             training_module = TrainModule(config=config)
             trainer = pl.Trainer(logger=logger, precision=precision, callbacks=[save_checkpoint],

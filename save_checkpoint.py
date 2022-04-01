@@ -11,6 +11,7 @@ import re
 class SaveCheckpoint(ModelCheckpoint):
     def __init__(self,
                  max_epochs,
+                 config,
                  seed=None,
                  every_n_epochs=None,
                  path_final_save=None,
@@ -39,7 +40,7 @@ class SaveCheckpoint(ModelCheckpoint):
                          save_top_k=save_top_k, save_last=save_last)
         self.path_final_save = path_final_save
         self.no_save_before_epoch = no_save_before_epoch
-        self.version_info = version_info
+        self.version_info = version_info+','+config['version_info']
         self.seed = seed
         if seed is not None:
             numpy.random.seed(seed)
