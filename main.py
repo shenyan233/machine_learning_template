@@ -73,12 +73,13 @@ def main(stage,
     # 获得网络参数
     params = importlib.import_module(f'network.{model_name}.config')
     config = params.config
+    config['batch_size'] = batch_size
     for kth_fold in range(kth_fold_start, k_fold):
         print(f'fold的数量为{kth_fold}')
         if version_nth is not None:
             load_checkpoint_path = get_ckpt_path(version_nth + kth_fold)
         logger = pl_loggers.TensorBoardLogger('logs/')
-        dm = DataModule(batch_size=batch_size, num_workers=num_workers, k_fold=k_fold, kth_fold=kth_fold,
+        dm = DataModule(num_workers=num_workers, k_fold=k_fold, kth_fold=kth_fold,
                         dataset_path=dataset_path, config=config)
         # SaveCheckpoint的创建需要在TrainModule之前, 以保证网络参数初始化的确定性
         save_checkpoint = SaveCheckpoint(seed=seed, max_epochs=max_epochs,

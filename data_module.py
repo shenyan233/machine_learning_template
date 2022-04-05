@@ -9,9 +9,9 @@ from torchvision import transforms
 
 
 class DataModule(pl.LightningDataModule):
-    def __init__(self, batch_size, num_workers, k_fold, kth_fold, dataset_path, config=None):
+    def __init__(self, num_workers, k_fold, kth_fold, dataset_path, config):
         super().__init__()
-        self.batch_size = batch_size
+        self.batch_size = config['batch_size']
         self.num_workers = num_workers
         self.config = config
         self.k_fold = k_fold
