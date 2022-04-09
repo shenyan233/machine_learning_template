@@ -47,7 +47,7 @@ def main(stage,
     :param dataset_path: 数据集地址, 其目录下包含数据集文件夹, 标签文件夹, 全部数据的命名list
     :param gpus:
     :param tpu_cores:
-    :param version_nth: 不论是重载训练还是测试, 固定为该folds的第一个版本的版本号
+    :param version_nth: 该值为重载训练的版本数或测试开始的版本数
     :param path_final_save: 每次更新ckpt文件后, 将其存放到另一个位置
     :param every_n_epochs: 每n个epoch设置一个检查点
     :param save_top_k:
@@ -77,7 +77,10 @@ def main(stage,
     for kth_fold in range(kth_fold_start, k_fold):
         print(f'fold的数量为{kth_fold}')
         if version_nth is not None:
-            load_checkpoint_path = get_ckpt_path(version_nth + kth_fold)
+            load_checkpoint_path = get_ckpt_path(version_nth)
+            version_nth += 1
+        else:
+            load_checkpoint_path = None
         logger = pl_loggers.TensorBoardLogger('logs/')
         dm = DataModule(num_workers=num_workers, k_fold=k_fold, kth_fold=kth_fold,
                         dataset_path=dataset_path, config=config)
@@ -118,9 +121,9 @@ def main(stage,
 
 
 if __name__ == "__main__":
-    main('fit', max_epochs=30, precision=16, dataset_path='./dataset/cifar-100', model_name='res_net',
+    main('fit', max_epochs=200, precision=16, dataset_path='./dataset/cifar-100', model_name='res_net',
          # gpus=2,
-         batch_size=2, accumulate_grad_batches=1,
-         k_fold=1, kth_fold_start=0,  # version_nth=0,
+         batch_size=128, accumulate_grad_batches=1,
+         k_fold=1, kth_fold_start=0,  # version_nth=3,
          version_info='baseline',
          )

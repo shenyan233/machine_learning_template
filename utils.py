@@ -83,13 +83,10 @@ def visual_label(dataset_path, n_classes):
 
 
 def get_ckpt_path(version_nth: int):
-    if version_nth is None:
-        return None
-    else:
-        version_name = f'version_{version_nth}'
-        checkpoints_path = './logs/default/' + version_name + '/checkpoints'
-        ckpt_path = glob.glob(checkpoints_path + '/*.ckpt')
-        return ckpt_path[0].replace('\\', '/')
+    version_name = f'version_{version_nth}'
+    checkpoints_path = './logs/default/' + version_name + '/checkpoints'
+    ckpt_path = glob.glob(checkpoints_path + '/*.ckpt')
+    return ckpt_path[0].replace('\\', '/')
 
 
 def fill_list(list, n):
@@ -166,6 +163,16 @@ def test_tflite(input):
     interpreter.invoke()
     output_data = interpreter.get_tensor(output_details[0]['index'])
     return output_data
+
+
+def feature_visualize(features, labels):
+    from sklearn.manifold import TSNE
+    import matplotlib.pyplot as plt
+
+    X_tsne = TSNE().fit_transform(features)
+    plt.figure()
+    plt.scatter(X_tsne[:, 0], X_tsne[:, 1], c=labels, label="t-SNE")
+    plt.show()
 
 
 if __name__ == "__main__":
