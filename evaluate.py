@@ -4,8 +4,9 @@
 import numpy as np
 from PIL import Image
 from os.path import join
+
+from network_module.classify_eval import get_acc_without_background, get_precision
 from network_module.iou import IOU
-from network_module.pix_acc import calculate_acc
 
 
 def evalute(n_classes, dataset_path, verbose=False):
@@ -23,7 +24,7 @@ def evalute(n_classes, dataset_path, verbose=False):
         iou.add_data(pred, label)
 
     # 必须置于iou_loss.forward前,因为forward会清除hist
-    overall_acc, acc = calculate_acc(iou.hist)
+    overall_acc, acc = get_acc_without_background(iou.hist), get_precision(iou.hist)
     mIoU, IoUs = iou.get_miou()
 
     if verbose:

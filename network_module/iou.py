@@ -3,12 +3,9 @@
 """
 import torch
 from torch import nn
+
+from network_module.classify_eval import fast_hist
 from network_module.compute_utils import torch_nanmean
-
-
-def fast_hist(pred, label, n_classes):
-    # np.bincount计算了从0到n**2-1这n**2个数中每个数出现的次数，返回值形状(n, n)
-    return torch.bincount(n_classes * label + pred, minlength=n_classes ** 2).reshape(n_classes, n_classes)
 
 
 def per_class_iu(hist):
