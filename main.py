@@ -27,6 +27,7 @@ def main(stage,
          save_top_k=1,
          version_info='无',
          accumulate_grad_batches=1,
+         profile=False,
          ):
     """
     框架的入口函数. 包含设置超参数, 划分数据集, 选择训练或测试等流程
@@ -97,6 +98,7 @@ def main(stage,
                                  strategy=None if gpus is None else 'ddp_sharded',  # 可以使用offload模式, 进一步降低内存占用
                                  max_epochs=max_epochs, log_every_n_steps=1,
                                  accumulate_grad_batches=accumulate_grad_batches,
+                                 profile=profile,
                                  )
             if kth_fold != kth_fold_start or load_checkpoint_path is None:
                 print('进行初始训练')
@@ -114,6 +116,7 @@ def main(stage,
                     checkpoint_path=load_checkpoint_path,
                     **{'config': config})
                 trainer = pl.Trainer(logger=logger, precision=precision, callbacks=[save_checkpoint],
+                                     profile=profile,
                                      gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=False if gpus is None else True,
                                      )
                 trainer.test(training_module, datamodule=dm)
