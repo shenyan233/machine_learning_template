@@ -27,7 +27,7 @@ def main(stage,
          save_top_k=1,
          version_info='无',
          accumulate_grad_batches=1,
-         profile=False,
+         profiler=None,
          ):
     """
     框架的入口函数. 包含设置超参数, 划分数据集, 选择训练或测试等流程
@@ -57,6 +57,7 @@ def main(stage,
     :param k_fold:
     :param version_info: 版本信息, 主要记录该版本的网络数据集等
     :param model_name: 模型名称，用于自动读取config，读取地址为./network/{model_name}/config.py
+    :param profiler: 性能检测
     """
     # 处理输入数据
     precision = 32 if ((gpus is None or gpus == 0) and tpu_cores is None) else precision
@@ -98,7 +99,7 @@ def main(stage,
                                  strategy=None if gpus is None else 'ddp_sharded',  # 可以使用offload模式, 进一步降低内存占用
                                  max_epochs=max_epochs, log_every_n_steps=1,
                                  accumulate_grad_batches=accumulate_grad_batches,
-                                 profile=profile,
+                                 profiler=profiler,
                                  )
             if kth_fold != kth_fold_start or load_checkpoint_path is None:
                 print('进行初始训练')
@@ -116,7 +117,7 @@ def main(stage,
                     checkpoint_path=load_checkpoint_path,
                     **{'config': config})
                 trainer = pl.Trainer(logger=logger, precision=precision, callbacks=[save_checkpoint],
-                                     profile=profile,
+                                     profiler=profiler,
                                      gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=False if gpus is None else True,
                                      )
                 trainer.test(training_module, datamodule=dm)
@@ -125,7 +126,7 @@ def main(stage,
 
 if __name__ == "__main__":
     main('fit', max_epochs=200, precision=16, dataset_path='./dataset/cifar-100', model_name='res_net',
-         # gpus=2,
+         gpus=0,
          batch_size=128, accumulate_grad_batches=1,
          k_fold=1, kth_fold_start=0,  # version_nth=3,
          version_info='baseline',
