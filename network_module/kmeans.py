@@ -16,7 +16,6 @@ class Kmeans:
         self.device = device
 
     def fit(self, x):
-        # 随机选择初始中心点，想更快的收敛速度可以借鉴sklearn中的kmeans++初始化方法
         init_row = torch.randint(0, x.shape[0], (self.n_clusters,)).to(self.device)
         unique_centers = torch.unique(init_row, dim=0)
         init_points = x[unique_centers]
@@ -31,9 +30,7 @@ class Kmeans:
             init_points = torch.cat((init_points, res_points[unique_centers]), dim=0)
         self.centers = init_points
         while True:
-            # 聚类标记
             self.nearest_center(x)
-            # 更新中心点
             self.update_center(x)
             if self.verbose:
                 print(self.variation, torch.argmin(self.dists, 0))
@@ -60,13 +57,13 @@ class Kmeans:
         self.started = True
 
     def update_center(self, x):
-        centers = torch.empty((0, x.shape[1])).to(self.device)  # shape (0, 250000)
+        centers = torch.empty((0, x.shape[1])).to(self.device)
         for i in range(self.n_clusters):
             mask = self.labels == i
             cluster_samples = x[mask]
             centers = torch.cat([centers, torch.mean(cluster_samples, 0).unsqueeze(0)], 0)
 
-        self.centers = centers  # shape (10, 2048)
+        self.centers = centers
 
     def representative_sample(self):
         self.representative_samples = torch.argmin(self.dists, 1)

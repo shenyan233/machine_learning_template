@@ -31,8 +31,10 @@ class DataModule(pl.LightningDataModule):
             self.test_dataset = CustomDataset(self.dataset_path, dataset_test, 'test', self.config,)
 
     def get_k_fold_dataset_list(self):
-        # 得到用于K折分割的数据的list, 并生成文件夹进行保存
+        # Get the list of data used for K folding and segmentation, and generate TXT file for saving
+        # 得到用于K折分割的数据的list, 并生成txt文件进行保存
         if not os.path.exists(self.dataset_path + '/k_fold_dataset_list.txt'):
+            # Get the list of data used for k-fold splitting
             # 获得用于k折分割的数据的list
             dataset = glob.glob(self.dataset_path + '/train/image/*.png')
             random.shuffle(dataset)
@@ -41,15 +43,17 @@ class DataModule(pl.LightningDataModule):
             with open(self.dataset_path + '/k_fold_dataset_list.txt', 'w', encoding='utf-8') as f:
                 for line in written:
                     f.write(line.replace('\\', '/') + '\n')
-            print('已生成新的k折数据list')
+            print('A new list of k-fold data has been generated|已生成新的k折数据list')
         else:
             dataset = open(self.dataset_path + '/k_fold_dataset_list.txt').readlines()
             dataset = [item.strip('\n') for item in dataset]
         return dataset
 
     def get_fit_dataset_lists(self, dataset_list: list):
+        # The amount of data that makes up a fold and the amount of data that is not enough to make up a fold
         # 得到一个fold的数据量和不够组成一个fold的剩余数据的数据量
         num_1fold, remainder = divmod(len(dataset_list), self.k_fold)
+        # The training set, validation set and test set are obtained by dividing all the data
         # 分割全部数据, 得到训练集, 验证集, 测试集
         dataset_val = dataset_list[num_1fold * self.kth_fold:(num_1fold * (self.kth_fold + 1) + remainder)]
         del (dataset_list[num_1fold * self.kth_fold:(num_1fold * (self.kth_fold + 1) + remainder)])
@@ -66,6 +70,16 @@ class DataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         """
+        Since the loss method used by PL to calculate and verify epoch calculated the mean value of the loss of
+        each batch, the mean value would also be calculated when multiple samples were calculated within each batch,
+        which led to the mean value calculation twice (this problem would also occur in official CELOSS). If the sizes
+        of two batches are different at this time, the weight of each loss is not equal, which leads to the error of
+        obtaining Loss. This situation often occurs, because the amount of data cannot be divided exactly by size, so
+        basically the size of the last batch is different from the size of the previous batch.
+        In order to ensure the accuracy of verification set calculation of Loss, batch size of verification set is
+        redefined in this method. In addition, the backpropagation of the training set is not affected, but
+        the loss record of the training set is. However, since batCH_size has a great influence on the training results,
+        the impact of loss record is ignored and the training set Batch size is not redefined.
         由于pl计算验证epoch的loss的方法为每个batch的loss求均值, 而每个batch内计算多个样本时同样会求均值,
         这导致了两次求均值(官方的celoss也会出现该问题). 如果这时存在两个batch的size不同,则会导致每个loss
         的权重不相等, 导致求loss的错误. 这种情况常常出现, 因为数据量不能整除size, 所以基本上最后一个batch
@@ -91,6 +105,7 @@ class CustomDataset(Dataset):
     def __init__(self, dataset_path, dataset, stage, config, ):
         super().__init__()
         self.dataset = dataset
+        # The mean and variance here are derived from ImageNet
         # 此处的均值和方差来源于ImageNet
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                          std=[0.229, 0.224, 0.225])
@@ -112,14 +127,15 @@ class CustomDataset(Dataset):
         self.labels = open(dataset_path + '/' + stage + '/label.txt').readlines()
 
     def __getitem__(self, idx):
+        # Note: In order to meet the requirements of the initial weight algorithm, the mean value of
+        # the input parameters is required to be 0. Transforms.Normalize() can be used
         # 注意: 为了满足初始化权重算法的要求, 需要输入参数的均值为0. 可以使用transforms.Normalize()
         image_path = self.dataset[idx]
         image_name = os.path.basename(image_path)
         image = Image.open(image_path)
         image = self.trans(image)
         label = torch.Tensor([int(self.labels[int(image_name.strip('.png'))].strip('\n'))])
-        # 不需要输出image_name, 因此这里置为0. 如果置为str类型, 会导致错误的提示, 这是pl的BUG, 后续BUG解决后可以不使用0代替
-        return 0, image, label.long()
+        return image_name, image, label.long()
 
     def __len__(self):
         return int(len(self.dataset))

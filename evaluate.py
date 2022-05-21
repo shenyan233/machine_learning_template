@@ -1,6 +1,3 @@
-"""
-评估指定文件夹下的预测结果, 评价结果均不计算背景类
-"""
 import numpy as np
 from PIL import Image
 from os.path import join
@@ -10,6 +7,11 @@ from network_module.iou import IOU
 
 
 def evalute(n_classes, dataset_path, verbose=False):
+    """
+    Evaluate the prediction results under the specified folder, and the evaluation results do not count
+    the background class
+    评估指定文件夹下的预测结果, 评价结果均不计算背景类
+    """
     iou = IOU(n_classes)
 
     test_list = open(join(dataset_path, 'test_dataset_list.txt').replace('\\', '/')).readlines()
@@ -23,7 +25,8 @@ def evalute(n_classes, dataset_path, verbose=False):
 
         iou.add_data(pred, label)
 
-    # 必须置于iou_loss.forward前,因为forward会清除hist
+    # It must be placed before iou.get_miou() because iou.get_miou() clears HIST matrix
+    # 必须置于iou.get_miou()前,因为iou.get_miou()会清除hist
     overall_acc, acc = get_acc_without_background(iou.hist), get_precision(iou.hist)
     mIoU, IoUs = iou.get_miou()
 

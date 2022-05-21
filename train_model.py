@@ -29,7 +29,6 @@ class TrainModule(pl.LightningModule):
         pred = self.net(input)
         return pred
 
-    # 返回值必须包含loss, loss可以作为dict中的key, 或者直接返回loss
     def training_step(self, batch, batch_idx):
         _, input, label = batch
         label = label.flatten()
@@ -59,7 +58,7 @@ class TrainModule(pl.LightningModule):
             pred = self.net(input)
             time_end = time.time()
             self.time_sum = time_end - time_start
-            print(f'\n推理时间为: {self.time_sum:f}')
+            print(f'\nInference time is {self.time_sum:f}|推理时间为: {self.time_sum:f}')
         else:
             pred = self.net(input)
         loss = self.loss(pred, label)
@@ -87,6 +86,7 @@ class TrainModule(pl.LightningModule):
 
     def load_pretrain_parameters(self):
         """
+        Load the pretraining parameters
         载入预训练参数
         """
         pass

@@ -1,21 +1,21 @@
-# 包含一些与网络无关的工具
+# Includes some tools that are independent of the model
+# 包含一些与模型无关的工具
 import glob
 
 
 def zip_dir(dir_path, zip_path):
     """
-    压缩文件
-
-    :param dir_path: 目标文件夹路径
-    :param zip_path: 压缩后的文件夹路径
+    :param dir_path: Destination folder path|目标文件夹路径
+    :param zip_path: result path|压缩后的文件夹路径
     """
     import zipfile
     import os
 
     ziper = zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED)
     for root, dirnames, filenames in os.walk(dir_path):
-        file_path = root.replace(dir_path, '')  # 去掉根路径，只对目标文件夹下的文件及文件夹进行压缩
-        # 循环出一个个文件名
+        # Delete the root path and compress only files and folders in the target folder
+        # 去掉根路径，只对目标文件夹下的文件及文件夹进行压缩
+        file_path = root.replace(dir_path, '')
         for filename in filenames:
             ziper.write(os.path.join(root, filename), os.path.join(file_path, filename))
     ziper.close()
@@ -23,11 +23,9 @@ def zip_dir(dir_path, zip_path):
 
 def ncolors(num_colors):
     """
+    Generate several colors with larger differences
     生成区别度较大的几种颜色
-    copy: https://blog.csdn.net/choumin/article/details/90320297
-
-    :param num_colors: 颜色数
-    :return:
+    copy from: https://blog.csdn.net/choumin/article/details/90320297
     """
 
     def get_n_hls_colors(num):
@@ -56,12 +54,6 @@ def ncolors(num_colors):
 
 
 def visual_label(dataset_path, n_classes):
-    """
-    将标签可视化
-
-    :param dataset_path: 地址
-    :param n_classes: 类别数
-    """
     import os
     from torchvision import transforms
     import cv2
@@ -98,11 +90,9 @@ def ckpt2onnx(version_nth, input_size, config):
     import torch
 
     checkpoint_path = get_ckpt_path(version_nth)
-    # 构建网络
     training_module = TrainModule.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
         **{'config': config})
-    # 输入参数
     input_sample = torch.randn(input_size)
     training_module.to_onnx(f'./logs/default/version_{version_nth}/version_{version_nth}.onnx', input_sample,
                             opset_version=12, export_params=True)
@@ -143,13 +133,17 @@ def test_onnx(input):
     model = rt.InferenceSession("./logs/default/version_0/version_0.onnx")
     input_name = model.get_inputs()
     output_name = None
+    # If an error ’Invalid Feed Input Name‘ occurs, the Input and output names in the Model can be changed from
+    # the Input names observed by the Netron software
     # 如果出现Invalid Feed Input Name: 这一错误，可通过Netron软件观察输入名称，改变model内的输入输出的名称
     result = model.run(output_name, {input_name[0].name: input})
     return result[0]
 
 
-# 输入为numpy矩阵
 def test_tflite(input):
+    """
+    :param input: numpy
+    """
     import tensorflow as tf
     # Load TFLite model and allocate tensors.
     interpreter = tf.lite.Interpreter(model_path="./logs/default/version_0/version_0.tflite")
