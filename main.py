@@ -96,7 +96,7 @@ def main(stage,
             training_module = TrainModule(config=config)
             trainer = pl.Trainer(logger=logger, precision=precision, callbacks=[save_checkpoint],
                                  gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=False if gpus is None else True,
-                                 strategy=None if gpus is None else 'ddp_sharded',  # 可以使用offload模式, 进一步降低内存占用
+                                 strategy=None if gpus is None else 'ddp',  # 可以使用offload模式, 进一步降低内存占用
                                  max_epochs=max_epochs, log_every_n_steps=1,
                                  accumulate_grad_batches=accumulate_grad_batches,
                                  profiler=profiler,
