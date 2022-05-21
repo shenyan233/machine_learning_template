@@ -1,6 +1,6 @@
 import importlib
-
 import torch
+from pytorch_lightning.strategies import DDPStrategy
 from save_checkpoint import SaveCheckpoint
 from data_module import DataModule
 from pytorch_lightning import loggers as pl_loggers
@@ -65,11 +65,6 @@ def main(stage,
     # 自动处理:param gpus
     if torch.cuda.is_available() and gpus is None and tpu_cores is None:
         gpus = 1
-    else:
-        if gpus == 0:
-            gpus = None
-        else:
-            gpus = gpus
     # 定义不常改动的通用参数
     num_workers = min([cpu_count(), 8])
     # 获得网络参数
@@ -95,8 +90,10 @@ def main(stage,
         if stage == 'fit':
             training_module = TrainModule(config=config)
             trainer = pl.Trainer(logger=logger, precision=precision, callbacks=[save_checkpoint],
-                                 gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=False if gpus is None else True,
-                                 strategy=None if gpus is None else 'ddp',  # 可以使用offload模式, 进一步降低内存占用
+                                 gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=True,
+                                 # 如果策略为None, 则在单GPU时无分布式, 多GPU时采用ddp_spawn策略; 如果指定了策略, 则不论GPU数量, 均采用指定策略
+                                 # 可以使用offload模式, 进一步降低内存占用
+                                 strategy=DDPStrategy(find_unused_parameters=False),
                                  max_epochs=max_epochs, log_every_n_steps=1,
                                  accumulate_grad_batches=accumulate_grad_batches,
                                  profiler=profiler,
@@ -118,7 +115,7 @@ def main(stage,
                     **{'config': config})
                 trainer = pl.Trainer(logger=logger, precision=precision, callbacks=[save_checkpoint],
                                      profiler=profiler,
-                                     gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=False if gpus is None else True,
+                                     gpus=gpus, tpu_cores=tpu_cores, auto_select_gpus=True,
                                      )
                 trainer.test(training_module, datamodule=dm)
         # 在cmd中使用tensorboard --logdir logs命令可以查看结果，在Jupyter格式下需要加%前缀
@@ -126,7 +123,7 @@ def main(stage,
 
 if __name__ == "__main__":
     main('fit', max_epochs=200, precision=16, dataset_path='./dataset/cifar-100', model_name='res_net',
-         gpus=0,
+         gpus=1,
          batch_size=128, accumulate_grad_batches=1,
          k_fold=1, kth_fold_start=0,  # version_nth=3,
          version_info='baseline',
