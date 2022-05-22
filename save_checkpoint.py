@@ -10,43 +10,25 @@ import re
 
 class SaveCheckpoint(ModelCheckpoint):
     def __init__(self,
-                 max_epochs,
                  config,
-                 seed=None,
-                 every_n_epochs=None,
-                 path_final_save=None,
                  monitor=None,
-                 save_top_k=None,
-                 verbose=False,
+                 verbose=True,
                  mode='min',
                  no_save_before_epoch=0,
-                 version_info='无',
                  save_last=False):
         """
         The callback implements the checkpoint saving logic and defines on_validation_end in the callback function.
         通过回调实现checkpoint的保存逻辑, 同时具有回调函数中定义on_validation_end等功能.
-
-        :param max_epochs:
-        :param seed:
-        :param every_n_epochs:
-        :param path_final_save:
-        :param monitor:
-        :param save_top_k:
-        :param verbose:
-        :param mode:
-        :param no_save_before_epoch:
-        :param version_info:
         """
-        super().__init__(every_n_epochs=every_n_epochs, verbose=verbose, mode=mode, monitor=monitor,
-                         save_top_k=save_top_k, save_last=save_last)
-        self.path_final_save = path_final_save
+        super().__init__(every_n_epochs=config['every_n_epochs'], verbose=verbose, mode=mode, monitor=monitor,
+                         save_top_k=config['save_top_k'], save_last=save_last)
+        self.config = config
+        self.path_final_save = config['path_final_save']
         self.no_save_before_epoch = no_save_before_epoch
-        self.version_info = version_info+','+config['version_info']
-        self.seed = seed
-        if seed is not None:
-            numpy.random.seed(seed)
-            self.seeds = numpy.random.randint(0, 2000, max_epochs)
-            pl.seed_everything(seed)
+        if config['seed'] is not None:
+            numpy.random.seed(config['seed'])
+            self.seeds = numpy.random.randint(0, 2000, config['max_epochs'])
+            pl.seed_everything(config['seed'])
             self.flag_sanity_check = 0
 
     def on_validation_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
@@ -63,7 +45,7 @@ class SaveCheckpoint(ModelCheckpoint):
         # The first epoch used the raw input seed as the seed, and subsequent epochs used the first epoch-1 of
         # the seeds as the seed
         # 第一个epoch使用原始输入seed作为种子, 后续的epoch使用seeds中的第epoch-1个作为种子
-        if self.seed is not None:
+        if self.config['seed'] is not None:
             if self.flag_sanity_check == 0:
                 self.flag_sanity_check = 1
             else:
@@ -115,7 +97,7 @@ class SaveCheckpoint(ModelCheckpoint):
         # the new info should be modified there
         # 版本信息表格的属性有: 版本名, epoch或测试结果, 评价结果, 备注
         # 新增的话修改此处
-        saved_info = [version_name, str(epoch), str(saved_value), self.version_info]
+        saved_info = [version_name, str(epoch), str(saved_value), self.config['version_info']]
         if not os.path.exists('./logs/default/version_info.txt'):
             with open('./logs/default/version_info.txt', 'w', encoding='utf-8') as f:
                 f.write(" ".join(saved_info) + '\n')

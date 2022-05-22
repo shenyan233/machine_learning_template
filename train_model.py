@@ -16,7 +16,6 @@ class TrainModule(pl.LightningModule):
     acc_min = None
     acc_max = None
 
-
     def __init__(self, config=None):
         super().__init__()
         self.config = config
