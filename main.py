@@ -1,4 +1,6 @@
 import importlib
+import json
+
 import torch
 from pytorch_lightning.strategies import DDPStrategy
 from save_checkpoint import SaveCheckpoint
@@ -137,8 +139,18 @@ def main(config):
 
 
 if __name__ == "__main__":
-    # Obtain all parameters
-    # 获得全部参数
     model_name = 'res_net'
-    params = importlib.import_module(f'network.{model_name}.config')
-    main(config=params.config)
+    while True:
+        # Obtain all parameters
+        # 获得全部参数
+        with open(f"./network/{model_name}/config.json", "r") as f:
+            configs = json.load(f)
+        if len(configs) == 0:
+            print('over|结束')
+            break
+        current_key = str(min([int(i) for i in list(configs.keys())]))
+        config = configs[current_key]
+        main(config=config)
+        with open(f"./network/{model_name}/config.json", "w") as f:
+            del configs[current_key]
+            f.write(json.dumps(configs, indent=2, ensure_ascii=False))

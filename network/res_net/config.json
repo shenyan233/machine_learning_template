@@ -1,0 +1,16 @@
+{
+  "0": {
+    "annotation1": "requires|必填",
+    "model_name": "res_net",
+    "dataset_path": "./dataset/cifar-100",
+    "stage": "fit",
+    "max_epochs": 200,
+    "batch_size": 128,
+    "version_info": "None",
+    "annotation2": "optional|可选",
+    "precision": 16,
+    "annotation3": "model parameters|模型参数",
+    "dim_in": 32,
+    "num_classes": 100
+  }
+}
