@@ -1,5 +1,6 @@
 import os
 import numpy.random
+import pandas
 from pytorch_lightning.callbacks import ModelCheckpoint
 import pytorch_lightning as pl
 import shutil
@@ -52,9 +53,10 @@ class SaveCheckpoint(ModelCheckpoint):
                 pl.seed_everything(self.seeds[trainer.current_epoch])
         super().on_validation_end(trainer, pl_module)
 
-    def _save_top_k_checkpoint(self, trainer: 'pl.Trainer', monitor_candidates) -> None:
+    def _save_topk_checkpoint(self, trainer: 'pl.Trainer', monitor_candidates) -> None:
         epoch = monitor_candidates.get("epoch")
         version_name = self.get_version_name(self.dirpath)
+        log_path = '/'.join(re.split(r'[/|\\]', self.dirpath)[0:2]) + '/'
         if self.monitor is None or self.save_top_k == 0 or epoch < self.no_save_before_epoch:
             return
 
@@ -64,15 +66,15 @@ class SaveCheckpoint(ModelCheckpoint):
             self._update_best_and_save(current, trainer, monitor_candidates)
 
             if self.mode == 'max':
-                saved_value = max([float('%.2f' % item) for item in list(self.best_k_models.values())])
+                monitor_value = max([float('%.2f' % item) for item in list(self.best_k_models.values())])
             else:
-                saved_value = min([float('%.2f' % item) for item in list(self.best_k_models.values())])
-            self.save_version_info(version_name, epoch, saved_value)
+                monitor_value = min([float('%.2f' % item) for item in list(self.best_k_models.values())])
+            self.save_version_info(log_path, version_name, epoch, monitor_value)
 
             # After each update of the CKPT file, store it in a different location
             # 每次更新ckpt文件后, 将其存放到另一个位置
             if self.path_final_save is not None:
-                zip_dir('./logs/default/' + version_name, './' + version_name + '.zip')
+                zip_dir(log_path + version_name, './' + version_name + '.zip')
                 if os.path.exists(self.path_final_save + '/' + version_name + '.zip'):
                     os.remove(self.path_final_save + '/' + version_name + '.zip')
                 shutil.move('./' + version_name + '.zip', self.path_final_save)
@@ -86,7 +88,7 @@ class SaveCheckpoint(ModelCheckpoint):
                 f"\nEpoch {epoch:d}, global step {step:d}: {self.monitor} ({float(current):f}) was not in "
                 f"top {self.save_top_k:d}({best_model_values:s})")
 
-    def save_version_info(self, version_name, epoch, saved_value):
+    def save_version_info(self, log_path, version_name, epoch, monitor_value):
         """
         Epoch 0 indicates that the epoch was not recorded or indeed 0, and epoch -1 indicates that
         this is the result of the test phase
@@ -97,38 +99,18 @@ class SaveCheckpoint(ModelCheckpoint):
         # the new info should be modified there
         # 版本信息表格的属性有: 版本名, epoch或测试结果, 评价结果, 备注
         # 新增的话修改此处
-        saved_info = [version_name, str(epoch), str(saved_value), self.config['version_info']]
-        if not os.path.exists('./logs/default/version_info.txt'):
-            with open('./logs/default/version_info.txt', 'w', encoding='utf-8') as f:
-                f.write(" ".join(saved_info) + '\n')
+        saved_info = {'version_name': version_name, 'epoch': int(epoch), 'monitor': self.monitor,
+                      'monitor_value': monitor_value, 'config': str(self.config)}
+        pd_one = pandas.DataFrame([saved_info])
+        if not os.path.exists(log_path + 'version_info.csv'):
+            pd_one.to_csv(log_path + 'version_info.csv', index=False, encoding="utf-8")
         else:
-            with open('./logs/default/version_info.txt', 'r', encoding='utf-8') as f:
-                info_list = f.readlines()
-            info_list = [item.strip('\n').split(' ') for item in info_list]
-            if len(info_list[0]) < len(saved_info):
-                for cou in range(len(info_list)):
-                    info_list[cou] = fill_list(info_list[cou], len(saved_info))
+            pd = pandas.read_csv(log_path + 'version_info.csv', encoding='utf-8')
+            if version_name in pd['version_name'].tolist():
+                pd[pd['version_name'] == version_name] = list(saved_info.values())
             else:
-                saved_info = fill_list(saved_info, len(info_list[0]))
-            # Transpose the list. The rows of the transposed list represent different attributes and the columns
-            # represent different versions
-            # 对list进行转置, 转置后行为不同属性, 列为不同版本
-            info_list = list(map(list, zip(*info_list)))
-            if version_name in info_list[0]:
-                for cou in range(len(info_list[0])):
-                    if version_name == info_list[0][cou]:
-                        for cou_attr in range(1, len(saved_info)):
-                            info_list[cou_attr][cou] = saved_info[cou_attr]
-            else:
-                for cou_attr in range(len(saved_info)):
-                    info_list[cou_attr].append(saved_info[cou_attr])
-            # Transpose the list
-            # 对list进行转置
-            info_list = list(map(list, zip(*info_list)))
-            with open('./logs/default/version_info.txt', 'w', encoding='utf-8') as f:
-                for line in info_list:
-                    line = " ".join(line)
-                    f.write(line + '\n')
+                pd = pandas.concat([pd, pd_one])
+            pd.to_csv(log_path + 'version_info.csv', index=False, encoding="utf-8")
 
     @staticmethod
     def get_version_name(dirpath):
