@@ -45,8 +45,8 @@ English config annotation：
     :param stage: 表示处于训练阶段还是测试阶段, fit表示训练, test表示测试
     :param max_epochs:
     :param batch_size:
-    :param version_info:
     @可选
+    :param version_info:
     :param accumulate_grad_batches:
     :param gpus:
     :param tpu_cores:
@@ -62,6 +62,7 @@ English config annotation：
     :param profiler:
 """
 default_config = {
+    'version_info': '',
     'gpus': None,
     'tpu_cores': None,
     'accumulate_grad_batches': 1,

@@ -20,6 +20,7 @@ class TrainModule(pl.LightningModule):
         super().__init__()
         self.config = config
         imported = importlib.import_module('network.%(model_name)s' % config)
+        # TODO Modify the network and loss function
         self.net = imported.resnet56()
         self.accuracy = imported.accuracy
         self.loss = nn.CrossEntropyLoss()
