@@ -39,3 +39,7 @@ In terminal, execute:
 ```bash
 python3 main.py
 ```
+
+## Contact
+Wechat(微信): shenyan233
+Twitter: @shenyan12138
