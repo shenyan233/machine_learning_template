@@ -74,18 +74,24 @@ def visual_label(dataset_path, n_classes):
             quality=95)
 
 
-def get_ckpt_path(version_nth: int):
-    version_name = f'version_{version_nth}'
-    checkpoints_path = './logs/default/' + version_name + '/checkpoints'
+def get_ckpt_path(version_nth: int, log_name):
+    checkpoints_path = f'./logs/{log_name}/version_{version_nth}/checkpoints'
     ckpt_path = glob.glob(checkpoints_path + '/*.ckpt')
     return ckpt_path[0].replace('\\', '/')
 
 
 def fill_list(list, n):
-    return list[:n] + ['default'] * (n - len(list))
+    return list[:n] + ['null'] * (n - len(list))
 
 
-def ckpt2onnx(version_nth, input_size, config):
+def ckpt2onnx(version_nth, input_size, config, save_path):
+    """
+    @param version_nth:
+    @param input_size:
+    @param config:
+    @param save_path: example: f'./logs/default/version_{version_nth}/version_{version_nth}.onnx'
+    @return:
+    """
     from train_model import TrainModule
     import torch
 
@@ -94,25 +100,30 @@ def ckpt2onnx(version_nth, input_size, config):
         checkpoint_path=checkpoint_path,
         **{'config': config})
     input_sample = torch.randn(input_size)
-    training_module.to_onnx(f'./logs/default/version_{version_nth}/version_{version_nth}.onnx', input_sample,
-                            opset_version=12, export_params=True)
+    training_module.to_onnx(save_path, input_sample, opset_version=12, export_params=True)
 
 
-def onnx2tf(version_nth):
+def onnx2tf(version_nth, save_path):
+    """
+    @param version_nth:
+    @param save_path: example: './logs/{log_name}/version_{version_nth}'
+    """
     from onnx_tf.backend import prepare
     import onnx
 
-    save_path = f'./logs/default/version_{version_nth}'
     onnx_path = glob.glob(save_path + '/*.onnx')[0].replace('\\', '/')
     onnx_model = onnx.load(onnx_path)  # load onnx model
     tf_rep = prepare(onnx_model)  # prepare tf representation
     tf_rep.export_graph(save_path + f"/version_{version_nth}.tf")  # export the model
 
 
-def tf2tflite(version_nth):
+def tf2tflite(version_nth, save_path):
+    """
+    @param version_nth:
+    @param save_path: example: './logs/default/version_{version_nth}'
+    """
     import tensorflow as tf
 
-    save_path = f'./logs/default/version_{version_nth}'
     tf_path = save_path + f"/version_{version_nth}.tf"
     tflite_path = save_path + f"/version_{version_nth}.tflite"
     converter = tf.lite.TFLiteConverter.from_saved_model(tf_path)
@@ -128,9 +139,13 @@ def tf2tflite(version_nth):
         f.write(tf_lite_model)
 
 
-def test_onnx(input):
+def test_onnx(input, model_path):
+    """
+    @param input:
+    @param model_path: example: "./logs/default/version_0/version_0.onnx"
+    """
     import onnxruntime as rt
-    model = rt.InferenceSession("./logs/default/version_0/version_0.onnx")
+    model = rt.InferenceSession(model_path)
     input_name = model.get_inputs()
     output_name = None
     # If an error ’Invalid Feed Input Name‘ occurs, the Input and output names in the Model can be changed from
@@ -140,13 +155,14 @@ def test_onnx(input):
     return result[0]
 
 
-def test_tflite(input):
+def test_tflite(input, model_path):
     """
-    :param input: numpy
+    :@param input: numpy
+    :@param model_path: example: "./logs/default/version_0/version_0.tflite"
     """
     import tensorflow as tf
     # Load TFLite model and allocate tensors.
-    interpreter = tf.lite.Interpreter(model_path="./logs/default/version_0/version_0.tflite")
+    interpreter = tf.lite.Interpreter(model_path=model_path)
     interpreter.allocate_tensors()
 
     input_details = interpreter.get_input_details()

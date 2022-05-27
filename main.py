@@ -69,6 +69,7 @@ default_config = {
     'k_fold': 1,
     'kth_fold_start': 0,
     'precision': 32,
+    'log_name': 'lightning_logs',
     'version_nth': None,
     'seed': None,
     'path_final_save': None,
@@ -91,11 +92,11 @@ def main(config):
     for kth_fold in range(config['kth_fold_start'], config['k_fold']):
         print(f'amount of fold is {kth_fold}|fold的数量为{kth_fold}')
         if config['version_nth'] is not None:
-            load_checkpoint_path = get_ckpt_path(config['version_nth'])
+            load_checkpoint_path = get_ckpt_path(config['version_nth'], config['log_name'])
             config['version_nth'] += 1
         else:
             load_checkpoint_path = None
-        logger = pl_loggers.TensorBoardLogger('logs/')
+        logger = pl_loggers.TensorBoardLogger('logs/', name=config['log_name'])
         dm = DataModule(num_workers=min([cpu_count(), 8]), config=config)
         # SaveCheckpoint should be created before TrainModule to ensure the deterministic initialization of network
         # parameters.
