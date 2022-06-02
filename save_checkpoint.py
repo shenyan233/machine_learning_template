@@ -1,28 +1,29 @@
+import importlib
 import os
-import numpy.random
+import numpy
 import pandas
 from pytorch_lightning.callbacks import ModelCheckpoint
 import pytorch_lightning as pl
 import shutil
 from pytorch_lightning.utilities import rank_zero_info
-from utils import zip_dir, fill_list
+from utils import zip_dir
 import re
 
 
 class SaveCheckpoint(ModelCheckpoint):
     def __init__(self,
                  config,
-                 monitor=None,
                  verbose=True,
-                 mode='min',
                  no_save_before_epoch=0,
                  save_last=False):
         """
         The callback implements the checkpoint saving logic and defines on_validation_end in the callback function.
         通过回调实现checkpoint的保存逻辑, 同时具有回调函数中定义on_validation_end等功能.
         """
-        super().__init__(every_n_epochs=config['every_n_epochs'], verbose=verbose, mode=mode, monitor=monitor,
-                         save_top_k=config['save_top_k'], save_last=save_last)
+        imported = importlib.import_module('network.%(model_name)s' % config)
+        monitor, monitor_mode, self.evaluate = imported.get_evaluation()
+        super().__init__(every_n_epochs=config['every_n_epochs'], verbose=verbose, mode=monitor_mode,
+                         monitor='Validation ' + monitor, save_top_k=config['save_top_k'], save_last=save_last)
         self.config = config
         self.path_final_save = config['path_final_save']
         self.no_save_before_epoch = no_save_before_epoch
@@ -120,11 +121,3 @@ class SaveCheckpoint(ModelCheckpoint):
                 version_name = item
                 break
         return version_name
-
-    def on_test_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        num_digits = 3
-        test_result = f'{round(pl_module.time_sum, num_digits)}|{round(pl_module.quantile25, num_digits)}|' \
-                      f'{round(pl_module.quantile50, num_digits)}|{round(pl_module.quantile75, num_digits)}|' \
-                      f'{round(pl_module.acc_min, num_digits)}|{round(pl_module.acc_max, num_digits)} '
-        self.save_version_info(self.get_version_name(trainer.log_dir), test_result,
-                               float('%.2f' % trainer.logged_metrics['Test acc']))

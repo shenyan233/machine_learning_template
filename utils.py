@@ -80,10 +80,6 @@ def get_ckpt_path(version_nth: int, log_name):
     return ckpt_path[0].replace('\\', '/')
 
 
-def fill_list(list, n):
-    return list[:n] + ['null'] * (n - len(list))
-
-
 def ckpt2onnx(version_nth, input_size, config, save_path):
     """
     @param version_nth:

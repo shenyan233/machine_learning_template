@@ -1,6 +1,4 @@
-import importlib
 import json
-
 import torch
 from pytorch_lightning.strategies import DDPStrategy
 from save_checkpoint import SaveCheckpoint
@@ -15,7 +13,7 @@ from utils import get_ckpt_path
 English config annotation：
     @requires
     :param model_name:
-    :param dataset_path: Data set address, whose directory contains: dataset folder, label folder, all data named list
+    :param dataset_name: Directory contains: dataset folder, label folder, all data named list
     :param stage: Indicates that you are currently in training or testing, ’fit‘ indicates training,
                   and ’test‘ indicates testing.
     :param max_epochs:
@@ -41,7 +39,7 @@ English config annotation：
 中文config注释：
     @必填
     :param model_name:
-    :param dataset_path: 数据集地址, 其目录下包含数据集文件夹, 标签文件夹, 全部数据的命名list
+    :param dataset_name: 其目录下包含数据集文件夹, 标签文件夹, 全部数据的命名list
     :param stage: 表示处于训练阶段还是测试阶段, fit表示训练, test表示测试
     :param max_epochs:
     :param batch_size:
@@ -101,7 +99,7 @@ def main(config):
         # SaveCheckpoint should be created before TrainModule to ensure the deterministic initialization of network
         # parameters.
         # SaveCheckpoint的创建需要在TrainModule之前, 以保证网络参数初始化的确定性
-        save_checkpoint = SaveCheckpoint(monitor='Validation acc', mode='max', config=config)
+        save_checkpoint = SaveCheckpoint(config=config)
         if config['stage'] == 'fit':
             training_module = TrainModule(config=config)
             trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
@@ -110,7 +108,8 @@ def main(config):
                                  # a strategy is specified, the strategy is applied regardless of the number of Gpus.
                                  # 如果策略为None, 则在单GPU时无分布式, 多GPU时采用ddp_spawn策略; 如果指定了策略, 则不论GPU数量,
                                  # 均采用指定策略
-                                 strategy=DDPStrategy(find_unused_parameters=False),
+                                 strategy=DDPStrategy(find_unused_parameters=False) if config['gpus'] is not None and
+                                                                                       config['gpus'] > 1 else None,
                                  max_epochs=config['max_epochs'], log_every_n_steps=1,
                                  accumulate_grad_batches=config['accumulate_grad_batches'],
                                  profiler=config['profiler'],
@@ -141,11 +140,10 @@ def main(config):
 
 
 if __name__ == "__main__":
-    model_name = 'res_net'
     while True:
         # Obtain all parameters
         # 获得全部参数
-        with open(f"./network/{model_name}/config.json", "r") as f:
+        with open("./tasks.json", "r", encoding='UTF-8') as f:
             configs = json.load(f)
         if len(configs) == 0:
             print('over|结束')
@@ -153,6 +151,6 @@ if __name__ == "__main__":
         current_key = str(min([int(i) for i in list(configs.keys())]))
         config = configs[current_key]
         main(config=config)
-        with open(f"./network/{model_name}/config.json", "w") as f:
+        with open("./tasks.json", "w", encoding='UTF-8') as f:
             del configs[current_key]
             f.write(json.dumps(configs, indent=2, ensure_ascii=False))

@@ -1,1 +1,1 @@
-from network.res_net.res_net import resnet56, accuracy
+from network.res_net.bridge import get_network, get_loss, get_evaluation

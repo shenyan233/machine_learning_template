@@ -2,7 +2,7 @@
   "0": {
     "annotation1": "requires|必填",
     "model_name": "res_net",
-    "dataset_path": "./dataset/cifar-100",
+    "dataset_name": "cifar100",
     "stage": "fit",
     "max_epochs": 200,
     "batch_size": 128,
