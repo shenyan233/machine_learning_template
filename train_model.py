@@ -34,6 +34,7 @@ class TrainModule(pl.LightningModule):
         pred = self.forward(input)
         loss = self.loss(pred, label)
         self.log("Validation loss", loss)
+        # TODO modify the method of computing evaluation index
         evaluation = self.evaluate(pred, label)
         self.log(f"Validation {self.monitor}", evaluation)
         return loss
