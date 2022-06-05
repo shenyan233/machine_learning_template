@@ -18,17 +18,21 @@ The directory structure of the whole project is as follows:
 │        │   ├── image
 │        │   │   └── *.png
 │        │   └── label.txt
+│        ├── __init__.py
 │        └── ...
 ├── network
 │   └── {network_name}
 │         ├── network.py
+│         ├── __init__.py
 │         └── ...
+├── tasks.json
 └── ...
 ```
 The files or folders shown above need to be pre-configured. Keep the default file or folder represented by the ellipsis. 
 The dataset needs to be adjusted to yourself dataset, and the 
 image (*.png) name is the line number in the corresponding label.txt. network.py contains the network architecture to be trained.
 You can change the file name of network.py to another name, but __init__.py needs to be changed synchronously.
+The configuration parameters of the task flow is saved in tasks.json.
 
 ## Install dependencies
 ```bash
