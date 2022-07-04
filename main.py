@@ -2,10 +2,9 @@ import json
 import torch
 from pytorch_lightning.strategies import DDPStrategy
 from save_checkpoint import SaveCheckpoint
-from data_module import DataModule
 from pytorch_lightning import loggers as pl_loggers
 import pytorch_lightning as pl
-from train_model import TrainModule
+import importlib
 from multiprocessing import cpu_count
 from utils import get_ckpt_path
 
@@ -95,13 +94,15 @@ def main(config):
         else:
             load_checkpoint_path = None
         logger = pl_loggers.TensorBoardLogger('logs/', name=config['log_name'])
-        dm = DataModule(num_workers=min([cpu_count(), 8]), config=config)
+        imported = importlib.import_module('dataset.%(dataset_name)s' % config)
+        dm = imported.DataModule(num_workers=min([cpu_count(), 8]), config=config)
         # SaveCheckpoint should be created before TrainModule to ensure the deterministic initialization of network
         # parameters.
         # SaveCheckpoint的创建需要在TrainModule之前, 以保证网络参数初始化的确定性
         save_checkpoint = SaveCheckpoint(config=config)
+        imported = importlib.import_module('network.%(model_name)s' % config)
         if config['stage'] == 'fit':
-            training_module = TrainModule(config=config)
+            training_module = imported.TrainModule(config=config)
             trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
                                  gpus=config['gpus'], tpu_cores=config['tpu_cores'], auto_select_gpus=True,
                                  # If the strategy is None, ddP_spawn strategy is used for multiple Gpus. If
@@ -126,7 +127,7 @@ def main(config):
                 print('Cannot test without loading weight information|未载入权重信息，不能测试')
             else:
                 print('testing|测试')
-                training_module = TrainModule.load_from_checkpoint(
+                training_module = imported.TrainModule.load_from_checkpoint(
                     checkpoint_path=load_checkpoint_path,
                     **{'config': config})
                 trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
