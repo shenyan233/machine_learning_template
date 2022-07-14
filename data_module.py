@@ -28,11 +28,11 @@ class DataModule(pl.LightningDataModule):
     def setup(self, stage=None) -> None:
         if stage == 'fit' or stage is None:
             dataset_train, dataset_val = self.get_fit_dataset_lists(self.dataset_path)
-            self.train_dataset = self.custom_dataset(self.dataset_path, dataset_train, 'train', self.config, )
-            self.val_dataset = self.custom_dataset(self.dataset_path, dataset_val, 'val', self.config, )
+            self.train_dataset = self.custom_dataset(dataset_train, 'train', self.config, )
+            self.val_dataset = self.custom_dataset(dataset_val, 'val', self.config, )
         if stage == 'test' or stage is None:
             dataset_test = self.get_test_dataset_lists(self.dataset_path)
-            self.test_dataset = self.custom_dataset(self.dataset_path, dataset_test, 'test', self.config, )
+            self.test_dataset = self.custom_dataset(dataset_test, 'test', self.config, )
 
     def get_fit_dataset_lists(self, dataset_path):
         k_fold_dataset_list = self.get_k_fold_dataset_list(dataset_path)

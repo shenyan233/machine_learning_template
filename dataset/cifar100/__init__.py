@@ -17,7 +17,7 @@ def get_test_dataset_lists(dataset_path):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, dataset_path, dataset, stage, config, ):
+    def __init__(self, dataset, stage, config, ):
         super().__init__()
         self.dataset = dataset
         # The mean and variance here are derived from ImageNet
@@ -39,6 +39,7 @@ class CustomDataset(Dataset):
             self.trans = transforms.Compose([
                 transforms.ToTensor(),
                 normalize, ])
+        dataset_path = './dataset/' + config['dataset_name']
         self.labels = open(dataset_path + '/' + stage + '/label.txt').readlines()
 
     def __getitem__(self, idx):
