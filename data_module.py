@@ -1,3 +1,5 @@
+# get_fit_dataset_lists or get_dataset_list must be overridden
+# get_test_dataset_lists must be overridden
 import importlib
 import os
 import random
@@ -14,44 +16,49 @@ class DataModule(pl.LightningDataModule):
 
         imported = importlib.import_module('dataset.%(dataset_name)s' % config)
         self.custom_dataset = imported.CustomDataset
-        self.get_dataset_list = imported.get_dataset_list
+
+        assert 'get_dataset_list' in dir(imported) or 'get_fit_dataset_lists' in dir(imported)
+        if 'get_dataset_list' in dir(imported):
+            self.get_dataset_list = imported.get_dataset_list
         if 'get_fit_dataset_lists' in dir(imported):
             self.get_fit_dataset_lists = imported.get_fit_dataset_lists
-        if 'get_test_dataset_lists' in dir(imported):
-            self.get_test_dataset_lists = imported.get_test_dataset_lists
+        assert 'get_test_dataset_lists' in dir(imported)
+        self.get_test_dataset_lists = imported.get_test_dataset_lists
 
     def setup(self, stage=None) -> None:
         if stage == 'fit' or stage is None:
-            k_fold_dataset_list = self.get_k_fold_dataset_list()
-            dataset_train, dataset_val = self.get_fit_dataset_lists(k_fold_dataset_list)
+            dataset_train, dataset_val = self.get_fit_dataset_lists(self.dataset_path)
             self.train_dataset = self.custom_dataset(self.dataset_path, dataset_train, 'train', self.config, )
             self.val_dataset = self.custom_dataset(self.dataset_path, dataset_val, 'val', self.config, )
         if stage == 'test' or stage is None:
             dataset_test = self.get_test_dataset_lists(self.dataset_path)
             self.test_dataset = self.custom_dataset(self.dataset_path, dataset_test, 'test', self.config, )
 
-    def get_k_fold_dataset_list(self):
+    def get_fit_dataset_lists(self, dataset_path):
+        k_fold_dataset_list = self.get_k_fold_dataset_list(dataset_path)
+        dataset_train, dataset_val = self.divide_fit_dataset_lists(k_fold_dataset_list)
+        return dataset_train, dataset_val
+
+    def get_k_fold_dataset_list(self, dataset_path):
         # Get the list of data used for K folding and segmentation, and generate TXT file for saving
         # 得到用于K折分割的数据的list, 并生成txt文件进行保存
-        if not os.path.exists(self.dataset_path + '/k_fold_dataset_list.txt'):
+        if not os.path.exists(dataset_path + '/k_fold_dataset_list.txt'):
             # Get the list of data used for k-fold splitting
             # 获得用于k折分割的数据的list
-            dataset = self.get_dataset_list(self.dataset_path)
-            if dataset is None:
-                return self.dataset_path
+            dataset = self.get_dataset_list(dataset_path)
             random.shuffle(dataset)
             written = dataset
 
-            with open(self.dataset_path + '/k_fold_dataset_list.txt', 'w', encoding='utf-8') as f:
+            with open(dataset_path + '/k_fold_dataset_list.txt', 'w', encoding='utf-8') as f:
                 for line in written:
                     f.write(line.replace('\\', '/') + '\n')
             print('A new list of k-fold data has been generated|已生成新的k折数据list')
         else:
-            dataset = open(self.dataset_path + '/k_fold_dataset_list.txt').readlines()
+            dataset = open(dataset_path + '/k_fold_dataset_list.txt').readlines()
             dataset = [item.strip('\n') for item in dataset]
         return dataset
 
-    def get_fit_dataset_lists(self, dataset_list: list):
+    def divide_fit_dataset_lists(self, dataset_list: list):
         # The amount of data that makes up a fold and the amount of data that is not enough to make up a fold
         # 得到一个fold的数据量和不够组成一个fold的剩余数据的数据量
         num_1fold, remainder = divmod(len(dataset_list), self.config['k_fold'])

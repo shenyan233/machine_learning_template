@@ -6,10 +6,6 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 
 
-def get_dataset_list(dataset_path):
-    return None
-
-
 def get_fit_dataset_lists(dataset_path):
     dataset_train = glob.glob(dataset_path + '/train/image/*.png')
     dataset_val = glob.glob(dataset_path + '/test/image/*.png')
