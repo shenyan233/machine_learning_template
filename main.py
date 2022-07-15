@@ -5,6 +5,7 @@ from save_checkpoint import SaveCheckpoint
 from pytorch_lightning import loggers as pl_loggers
 import pytorch_lightning as pl
 import importlib
+from data_module import DataModule
 from multiprocessing import cpu_count
 from utils import get_ckpt_path
 
@@ -94,8 +95,7 @@ def main(config):
         else:
             load_checkpoint_path = None
         logger = pl_loggers.TensorBoardLogger('logs/', name=config['log_name'])
-        imported = importlib.import_module('dataset.%(dataset_name)s' % config)
-        dm = imported.DataModule(num_workers=min([cpu_count(), 8]), config=config)
+        dm = DataModule(num_workers=min([cpu_count(), 8]), config=config)
         # SaveCheckpoint should be created before TrainModule to ensure the deterministic initialization of network
         # parameters.
         # SaveCheckpoint的创建需要在TrainModule之前, 以保证网络参数初始化的确定性
