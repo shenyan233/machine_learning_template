@@ -153,5 +153,6 @@ if __name__ == "__main__":
         config = configs[current_key]
         main(config=config)
         with open("./tasks.json", "w", encoding='UTF-8') as f:
+            configs = json.load(f)
             del configs[current_key]
             f.write(json.dumps(configs, indent=2, ensure_ascii=False))
