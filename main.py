@@ -19,22 +19,25 @@ English config annotation：
     :param max_epochs:
     :param batch_size:
     @optional
-    :param accumulate_grad_batches:
+    :param version_info:
     :param gpus:
     :param tpu_cores:
-    :param precision: Training accuracy, normal accuracy is 32, half accuracy is 16. Precision represents the number
-                      of bits of each parameter's type
-    :param seed:
+    :param accumulate_grad_batches:
     :param k_fold:
     :param kth_fold_start: Start with the number of folds. If resumed training is used, kth_fold_start is
                            the number of resumed folds, with the first value being 0. In the case of
                            resumed training, the number of training can be controlled by adjusting the value.
+    :param precision: Training accuracy, normal accuracy is 32, half accuracy is 16. Precision represents the number
+                      of bits of each parameter's type
+    :param log_name: 
     :param version_nth: This value is the number of versions of resumed training or the number of versions
                         at which the test began
+    :param seed:
+    :param path_final_save: After each update of the CKPT file, store module in a different location
     :param every_n_epochs: Set a checkpoint for every n epochs
     :param save_top_k:
-    :param path_final_save: After each update of the CKPT file, store module in a different location
     :param profiler:
+    :param gradient_clip_val:
 
 中文config注释：
     @必填
@@ -45,19 +48,21 @@ English config annotation：
     :param batch_size:
     @可选
     :param version_info:
-    :param accumulate_grad_batches:
     :param gpus:
     :param tpu_cores:
-    :param precision: 训练精度, 正常精度为32, 半精度为16. 精度代表每个参数的类型所占的位数
-    :param seed:
+    :param accumulate_grad_batches:
     :param k_fold:
     :param kth_fold_start: 从第几个fold开始. 若使用重载训练, 则kth_fold_start为重载第几个fold, 第一个值为0.
                            非重载训练的情况下, 可以通过调整该值控制训练的次数;
+    :param precision: 训练精度, 正常精度为32, 半精度为16. 精度代表每个参数的类型所占的位数
+    :param log_name: 
     :param version_nth: 该值为重载训练的版本数或测试开始的版本数
+    :param seed:
+    :param path_final_save: 每次更新ckpt文件后, 将其存放到另一个位置
     :param every_n_epochs: 每n个epoch设置一个检查点
     :param save_top_k:
-    :param path_final_save: 每次更新ckpt文件后, 将其存放到另一个位置
     :param profiler:
+    :param gradient_clip_val:
 """
 default_config = {
     'version_info': '',
@@ -74,6 +79,7 @@ default_config = {
     'every_n_epochs': 1,
     'save_top_k': 1,
     'profiler': None,
+    'gradient_clip_val': None
 }
 
 
@@ -114,6 +120,7 @@ def main(config):
                                  max_epochs=config['max_epochs'], log_every_n_steps=1,
                                  accumulate_grad_batches=config['accumulate_grad_batches'],
                                  profiler=config['profiler'],
+                                 gradient_clip_val=config['gradient_clip_val'],
                                  )
             if kth_fold != config['kth_fold_start'] or load_checkpoint_path is None:
                 print('initial training|初始训练')
