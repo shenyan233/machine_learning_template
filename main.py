@@ -159,7 +159,9 @@ if __name__ == "__main__":
         current_key = str(min([int(i) for i in list(configs.keys())]))
         config = configs[current_key]
         main(config=config)
-        with open("./tasks.json", "w", encoding='UTF-8') as f:
+        with open("./tasks.json", "r", encoding='UTF-8') as f:
             configs = json.load(f)
-            del configs[current_key]
+        del configs[current_key]
+        with open("./tasks.json", "w", encoding='UTF-8') as f:
             f.write(json.dumps(configs, indent=2, ensure_ascii=False))
+

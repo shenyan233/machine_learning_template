@@ -1,5 +1,8 @@
 # get_fit_dataset_lists or get_dataset_list must be overridden
 # get_test_dataset_lists must be overridden
+import sys
+datasets_path = '/home/shen/dataset'
+sys.path.append(datasets_path)
 import importlib
 import os
 import random
@@ -12,9 +15,9 @@ class DataModule(pl.LightningDataModule):
         super().__init__()
         self.num_workers = num_workers
         self.config = config
-        self.dataset_path = './dataset/' + config['dataset_name']
+        self.dataset_path = datasets_path + '/' + config['dataset_name']
 
-        imported = importlib.import_module('dataset.%(dataset_name)s' % config)
+        imported = importlib.import_module('%(dataset_name)s' % config)
         self.custom_dataset = imported.CustomDataset
 
         assert 'get_dataset_list' in dir(imported) or 'get_fit_dataset_lists' in dir(imported)
@@ -28,11 +31,11 @@ class DataModule(pl.LightningDataModule):
     def setup(self, stage=None) -> None:
         if stage == 'fit' or stage is None:
             dataset_train, dataset_val = self.get_fit_dataset_lists(self.dataset_path)
-            self.train_dataset = self.custom_dataset(dataset_train, 'train', self.config, )
-            self.val_dataset = self.custom_dataset(dataset_val, 'val', self.config, )
+            self.train_dataset = self.custom_dataset(dataset_train, 'train', self.config, self.dataset_path)
+            self.val_dataset = self.custom_dataset(dataset_val, 'val', self.config, self.dataset_path)
         if stage == 'test' or stage is None:
             dataset_test = self.get_test_dataset_lists(self.dataset_path)
-            self.test_dataset = self.custom_dataset(dataset_test, 'test', self.config, )
+            self.test_dataset = self.custom_dataset(dataset_test, 'test', self.config, self.dataset_path)
 
     def get_fit_dataset_lists(self, dataset_path):
         k_fold_dataset_list = self.get_k_fold_dataset_list(dataset_path)
