@@ -1,6 +1,7 @@
 # get_fit_dataset_lists or get_dataset_list must be overridden
 # get_test_dataset_lists must be overridden
 import sys
+
 datasets_path = '/home/shen/dataset'
 sys.path.append(datasets_path)
 import importlib
@@ -16,8 +17,12 @@ class DataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.config = config
         self.dataset_path = datasets_path + '/' + config['dataset_name']
+        self.pin_memory = False
 
-        imported = importlib.import_module('%(dataset_name)s' % config)
+        if config['is_check']:
+            imported = importlib.import_module('dataset.check')
+        else:
+            imported = importlib.import_module('%(dataset_name)s' % config)
         self.custom_dataset = imported.CustomDataset
 
         assert 'get_dataset_list' in dir(imported) or 'get_fit_dataset_lists' in dir(imported)
@@ -75,11 +80,12 @@ class DataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.config['batch_size'], shuffle=True,
-                          num_workers=self.num_workers, pin_memory=True)
+                          num_workers=self.num_workers, pin_memory=self.pin_memory)
 
     def val_dataloader(self):
         return DataLoader(self.val_dataset, batch_size=self.config['batch_size'], shuffle=False,
-                          num_workers=self.num_workers, pin_memory=True)
+                          num_workers=self.num_workers, pin_memory=self.pin_memory)
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=1, shuffle=False, num_workers=self.num_workers, pin_memory=True)
+        return DataLoader(self.test_dataset, batch_size=1, shuffle=False, num_workers=self.num_workers,
+                          pin_memory=self.pin_memory)

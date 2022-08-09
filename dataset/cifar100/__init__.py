@@ -17,7 +17,7 @@ def get_test_dataset_lists(dataset_path):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, dataset, stage, config, ):
+    def __init__(self, dataset, stage, config, dataset_path):
         super().__init__()
         self.dataset = dataset
         # The mean and variance here are derived from ImageNet

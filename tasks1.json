@@ -7,10 +7,12 @@
     "max_epochs": 200,
     "batch_size": 128,
     "annotation2": "optional|可选",
+    "gpus": 0,
     "version_info": "None",
     "precision": 16,
     "annotation3": "model parameters|模型参数",
     "dim_in": 32,
-    "num_classes": 100
+    "num_classes": 100,
+    "is_check": true
   }
 }

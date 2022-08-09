@@ -1,4 +1,5 @@
 import json
+import os
 import torch
 from pytorch_lightning.strategies import DDPStrategy
 from save_checkpoint import SaveCheckpoint
@@ -38,6 +39,7 @@ English config annotation：
     :param save_top_k:
     :param profiler:
     :param gradient_clip_val:
+    :param is_check:
 
 中文config注释：
     @必填
@@ -63,6 +65,7 @@ English config annotation：
     :param save_top_k:
     :param profiler:
     :param gradient_clip_val:
+    :param is_check:
 """
 default_config = {
     'version_info': '',
@@ -79,7 +82,8 @@ default_config = {
     'every_n_epochs': 1,
     'save_top_k': 1,
     'profiler': None,
-    'gradient_clip_val': None
+    'gradient_clip_val': None,
+    'is_check': False
 }
 
 
@@ -148,10 +152,12 @@ def main(config):
 
 
 if __name__ == "__main__":
+    file_name = os.path.basename(__file__)
+    nth_thread = int(file_name.strip('main.py'))
     while True:
         # Obtain all parameters
         # 获得全部参数
-        with open("./tasks.json", "r", encoding='UTF-8') as f:
+        with open(f"./tasks{nth_thread}.json", "r", encoding='UTF-8') as f:
             configs = json.load(f)
         if len(configs) == 0:
             print('over|结束')
@@ -159,9 +165,9 @@ if __name__ == "__main__":
         current_key = str(min([int(i) for i in list(configs.keys())]))
         config = configs[current_key]
         main(config=config)
-        with open("./tasks.json", "r", encoding='UTF-8') as f:
+        with open(f"./tasks{nth_thread}.json", "r", encoding='UTF-8') as f:
             configs = json.load(f)
         del configs[current_key]
-        with open("./tasks.json", "w", encoding='UTF-8') as f:
+        with open(f"./tasks{nth_thread}.json", "w", encoding='UTF-8') as f:
             f.write(json.dumps(configs, indent=2, ensure_ascii=False))
 
