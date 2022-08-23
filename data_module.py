@@ -20,6 +20,8 @@ class DataModule(pl.LightningDataModule):
         if (config['gpus'] is None or config['gpus'] == 0) and (
                 config['tpu_cores'] is None or config['tpu_cores'] == 0):
             self.pin_memory = False
+        else:
+            self.pin_memory = True
 
         if config['is_check']:
             imported = importlib.import_module('dataset.check')
