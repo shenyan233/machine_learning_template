@@ -18,7 +18,7 @@ class CustomDataset(Dataset):
         self.config = config
 
     def __getitem__(self, idx):
-        input = torch.randn((3, self.config['dim_in'], self.config['dim_in']))
+        input = torch.rand((3, self.config['dim_in'], self.config['dim_in']))
         return 'check', input, 0
 
     def __len__(self):
