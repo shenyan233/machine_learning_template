@@ -101,8 +101,9 @@ class SaveCheckpoint(ModelCheckpoint):
         # the new info should be modified there
         # 版本信息表格的属性有: 版本名, epoch或测试结果, 评价结果, 备注
         # 新增的话修改此处
-        saved_info = {'version_name': version_name, 'epoch': int(epoch), 'monitor': self.monitor,
-                      'monitor_value': monitor_value, 'config': str(self.config)}
+        saved_info = {'version_name': version_name, 'dataset_name': self.config['dataset_name'],
+                      'model_name': self.config['model_name'], 'monitor': self.monitor,
+                      'monitor_value': monitor_value, 'epoch': int(epoch), 'config': str(self.config)}
         pd_one = pandas.DataFrame([saved_info])
         if not os.path.exists(log_path + 'version_info.csv'):
             pd_one.to_csv(log_path + 'version_info.csv', index=False, encoding="utf-8")
