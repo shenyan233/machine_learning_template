@@ -1,5 +1,7 @@
 import json
 import os
+from datetime import datetime
+
 import torch
 from pytorch_lightning.strategies import DDPStrategy
 from save_checkpoint import SaveCheckpoint
@@ -99,6 +101,7 @@ def main(config):
         config['precision'] = 32
     for kth_fold in range(config['kth_fold_start'], config['k_fold']):
         print(f'amount of fold is {kth_fold}|fold的数量为{kth_fold}')
+        config['time'] = str(datetime.now())
         if config['version_nth'] is not None:
             load_checkpoint_path = get_ckpt_path(config['version_nth'], config['log_name'])
             config['version_nth'] += 1
