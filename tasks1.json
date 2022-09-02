@@ -14,5 +14,8 @@
     "dim_in": 32,
     "num_classes": 100,
     "is_check": true
+  },
+  "999": {
+    "readme": "This end."
   }
 }
