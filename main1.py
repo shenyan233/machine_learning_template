@@ -166,6 +166,7 @@ if __name__ == "__main__":
             print('over|结束')
             break
         current_key = str(min([int(i) for i in list(configs.keys())]))
+        print(f'Current_key is {current_key}')
         config = configs[current_key]
         main(config=config)
         with open(f"./tasks{nth_thread}.json", "r", encoding='UTF-8') as f:
