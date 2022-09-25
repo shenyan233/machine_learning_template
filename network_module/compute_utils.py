@@ -18,3 +18,9 @@ def torch_nanmean(x):
     if num == 0:
         num = 1
     return value / num
+
+
+def del_tensor_ele(arr, index):
+    arr1 = arr[0:index]
+    arr2 = arr[index + 1:]
+    return torch.cat((arr1, arr2), dim=0)

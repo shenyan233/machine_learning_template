@@ -39,7 +39,7 @@ def cluster_ch(features, clusters_result):
 
 def cluster_elbow(features, clusters_result):
     n_labels = torch.max(clusters_result) + 1
-    intra_disp = torch.zeros(1)
+    intra_disp = torch.zeros(1).type_as(features)
     for k in range(n_labels):
         cluster_k = features[clusters_result == k]
         mean_k = torch.mean(cluster_k, dim=0)
