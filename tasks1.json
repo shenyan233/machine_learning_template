@@ -12,8 +12,7 @@
     "precision": 16,
     "annotation3": "model parameters|模型参数",
     "dim_in": 32,
-    "num_classes": 100,
-    "is_check": true
+    "num_classes": 100
   },
   "999": {
     "readme": "This end."

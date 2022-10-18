@@ -39,7 +39,6 @@ class CustomDataset(Dataset):
             self.trans = transforms.Compose([
                 transforms.ToTensor(),
                 normalize, ])
-        dataset_path = './dataset/' + config['dataset_name']
         self.labels = open(dataset_path + '/' + stage + '/label.txt').readlines()
 
     def __getitem__(self, idx):

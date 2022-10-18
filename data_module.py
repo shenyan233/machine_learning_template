@@ -1,9 +1,6 @@
 # get_fit_dataset_lists or get_dataset_list must be overridden
 # get_test_dataset_lists must be overridden
-import sys
-
 datasets_path = '/home/shen/dataset'
-sys.path.append(datasets_path)
 import importlib
 import os
 import random
@@ -26,7 +23,7 @@ class DataModule(pl.LightningDataModule):
         if config['is_check']:
             imported = importlib.import_module('dataset.check')
         else:
-            imported = importlib.import_module('%(dataset_name)s' % config)
+            imported = importlib.import_module('dataset.%(dataset_name)s' % config)
         self.custom_dataset = imported.CustomDataset
 
         assert 'get_dataset_list' in dir(imported) or 'get_fit_dataset_lists' in dir(imported)
