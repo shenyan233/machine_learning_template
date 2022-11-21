@@ -80,21 +80,26 @@ def get_ckpt_path(version_nth: int, log_name):
     return ckpt_path[0].replace('\\', '/')
 
 
-def ckpt2onnx(version_nth, input_size, config, save_path):
+def ckpt2onnx(version_nth, model_name, log_name, input_size, config, save_path):
     """
     @param version_nth:
+    @param log_name:
     @param input_size:
     @param config:
     @param save_path: example: f'./logs/default/version_{version_nth}/version_{version_nth}.onnx'
     @return:
     """
-    from train_model import TrainModule
+    import importlib
     import torch
 
-    checkpoint_path = get_ckpt_path(version_nth)
-    training_module = TrainModule.load_from_checkpoint(
+
+    checkpoint_path = get_ckpt_path(version_nth, log_name)
+
+    imported = importlib.import_module(f'network.{model_name}')
+    training_module = imported.TrainModule.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
         **{'config': config})
+
     input_sample = torch.randn(input_size)
     training_module.to_onnx(save_path, input_sample, opset_version=12, export_params=True)
 
