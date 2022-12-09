@@ -153,7 +153,10 @@ def main(config):
         # in Jupyter format
         # 在cmd中使用tensorboard --logdir logs命令可以查看结果，在Jupyter格式下需要加%前缀
         if config['version_nth'] is not None:
-            config['version_nth'] += 1
+            if config['stage'] == 'fit':
+                config['version_nth'] = None
+            elif config['stage'] == 'test':
+                config['version_nth'] += 1
 
 
 if __name__ == "__main__":
