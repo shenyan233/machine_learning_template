@@ -101,10 +101,10 @@ def main(config):
         config['precision'] = 32
     for kth_fold in range(config['kth_fold_start'], config['k_fold']):
         print(f'amount of fold is {kth_fold}|fold的数量为{kth_fold}')
+        config['kth_fold'] = kth_fold
         config['time'] = str(datetime.now())
         if config['version_nth'] is not None:
             load_checkpoint_path = get_ckpt_path(config['version_nth'], config['log_name'])
-            config['version_nth'] += 1
         else:
             load_checkpoint_path = None
         logger = pl_loggers.TensorBoardLogger('logs/', name=config['log_name'])
@@ -152,6 +152,8 @@ def main(config):
         # The result can be viewed using ’tensorboard --logdir logs‘ in CMD, with the % prefix required
         # in Jupyter format
         # 在cmd中使用tensorboard --logdir logs命令可以查看结果，在Jupyter格式下需要加%前缀
+        if config['version_nth'] is not None:
+            config['version_nth'] += 1
 
 
 if __name__ == "__main__":
