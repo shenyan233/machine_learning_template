@@ -56,7 +56,7 @@ class TrainModule(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        lr = 0.1
+        lr = 0.1 if 'lr' not in self.config else self.config['lr']
         optimizer = torch.optim.SGD(self.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
         lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100, 150], last_epoch=-1)
         # TODO 实现warmup
