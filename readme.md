@@ -25,7 +25,7 @@ The directory structure of the whole project is as follows:
 │         ├── network.py
 │         ├── __init__.py
 │         └── ...
-├── tasks1.json
+├── tasks.json
 └── ...
 ```
 The files or folders shown above need to be pre-configured. Keep the default file or folder represented by the ellipsis. 
@@ -48,7 +48,7 @@ The training parameter 'stage' is 'fit' or 'test', which are represented as trai
 ## Start Train/Test
 In terminal, execute:
 ```bash
-python3 main1.py
+python3 main.py 1
 ```
 
 ## Contact

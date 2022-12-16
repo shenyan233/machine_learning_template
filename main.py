@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-
+import argparse
 import torch
 from pytorch_lightning.strategies import DDPStrategy
 from save_checkpoint import SaveCheckpoint
@@ -160,12 +160,14 @@ def main(config):
 
 
 if __name__ == "__main__":
-    file_name = os.path.basename(__file__)
-    nth_thread = int(file_name.strip('main.py'))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-nth', type=int, help='task_nth. example format: tasks1', default=None)
+    args = parser.parse_args()
+    nth_thread = args.nth
     while True:
         # Obtain all parameters
         # 获得全部参数
-        with open(f"./tasks{nth_thread}.json", "r", encoding='UTF-8') as f:
+        with open(f"./tasks{nth_thread if nth_thread is not None else ''}.json", "r", encoding='UTF-8') as f:
             configs = json.load(f)
         if len(configs) == 0:
             print('over|结束')
