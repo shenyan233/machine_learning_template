@@ -92,7 +92,6 @@ def ckpt2onnx(version_nth, model_name, log_name, input_size, config, save_path):
     import importlib
     import torch
 
-
     checkpoint_path = get_ckpt_path(version_nth, log_name)
 
     imported = importlib.import_module(f'network.{model_name}')
@@ -184,6 +183,22 @@ def feature_visualize(features, labels):
     plt.figure()
     plt.scatter(X_tsne[:, 0], X_tsne[:, 1], c=labels, label="t-SNE")
     plt.show()
+
+
+def load_logs_data(log_name, version):
+    from tensorboard.backend.event_processing import event_accumulator
+
+    ea1 = event_accumulator.EventAccumulator(
+        f'./logs/{log_name}/resnet50_imagenet/version_{version}/events.out.tfevents.1667450422.shen.232301.6')
+    ea1.Reload()
+    val_acc1 = ea1.scalars.Items('Validation acc')
+
+    for i in val_acc1:
+        print(f'{i.value}')
+
+
+def change_csv_colume(augment_colume: list):
+    pass
 
 
 if __name__ == "__main__":
