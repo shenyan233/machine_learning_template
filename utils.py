@@ -185,21 +185,35 @@ def feature_visualize(features, labels):
     plt.show()
 
 
-def load_logs_data(log_name, version):
+def load_logs_data(log_name, item='Validation acc'):
     from tensorboard.backend.event_processing import event_accumulator
+    import os
+    import pandas
 
-    ea1 = event_accumulator.EventAccumulator(
-        f'./logs/{log_name}/resnet50_imagenet/version_{version}/events.out.tfevents.1667450422.shen.232301.6')
-    ea1.Reload()
-    val_acc1 = ea1.scalars.Items('Validation acc')
+    list_versions = os.listdir(f'./logs/{log_name}')
+    pd = pandas.DataFrame()
+    for version in list_versions:
+        if 'txt' not in version:
+            for file in os.listdir(f'./logs/{log_name}/{version}'):
+                if 'events.out' in file:
+                    tensor_board = event_accumulator.EventAccumulator(
+                        f'./logs/{log_name}/{version}/{file}')
+                    tensor_board.Reload()
+                    val_acc = tensor_board.scalars.Items(item)
 
-    for i in val_acc1:
-        print(f'{i.value}')
+                    list_data = []
+                    for i in val_acc:
+                        list_data.append(i.value)
+                    pd_one = pandas.DataFrame([list_data])
+                    pd = pandas.concat([pd, pd_one])
+    pd.to_csv(f'{item}.csv', index=False, encoding="utf-8")
 
 
 def change_csv_colume(augment_colume: list):
+    # the func to extract special info from csv as a colume
     pass
 
 
 if __name__ == "__main__":
+    load_logs_data('logs','Training loss')
     pass
