@@ -56,7 +56,7 @@ def ncolors(num_colors):
 def visual_label(dataset_path, n_classes):
     import os
     from torchvision import transforms
-    import cv2
+    from PIL import Image
     import torch
 
     label_path = os.path.join(dataset_path, 'test', 'labels').replace('\\', '/')
@@ -67,7 +67,7 @@ def visual_label(dataset_path, n_classes):
     if not os.path.exists(dataset_path + '/visual_label'):
         os.makedirs(dataset_path + '/visual_label')
     for index in range(len(label_image_list)):
-        label_image = cv2.imread(label_image_list[index], -1)
+        label_image = Image.open(label_image_list[index])
         name = os.path.basename(label_image_list[index])
         trans_factory(torch.from_numpy(label_image).float() / n_classes).save(
             dataset_path + '/visual_label/' + name,
