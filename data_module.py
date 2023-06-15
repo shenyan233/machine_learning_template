@@ -14,11 +14,7 @@ class DataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.config = config
         self.dataset_path = datasets_path + '/' + config['dataset_name']
-        if (config['gpus'] is None or config['gpus'] == 0) and (
-                config['tpu_cores'] is None or config['tpu_cores'] == 0):
-            self.pin_memory = False
-        else:
-            self.pin_memory = True
+        self.pin_memory = True
 
         if config['is_check']:
             imported = importlib.import_module('dataset.check')

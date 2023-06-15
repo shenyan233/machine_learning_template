@@ -1,8 +1,6 @@
 import json
-import os
 from datetime import datetime
 import argparse
-import torch
 from pytorch_lightning.strategies import DDPStrategy
 from save_checkpoint import SaveCheckpoint
 from pytorch_lightning import loggers as pl_loggers
@@ -23,15 +21,17 @@ English config annotation：
     :param batch_size:
     @optional
     :param version_info:
-    :param gpus:
-    :param tpu_cores:
+    :param accelerator:
+    :param devices:
     :param accumulate_grad_batches:
     :param k_fold:
     :param kth_fold_start: Start with the number of folds. If resumed training is used, kth_fold_start is
                            the number of resumed folds, with the first value being 0. In the case of
                            resumed training, the number of training can be controlled by adjusting the value.
     :param precision: Training accuracy, normal accuracy is 32, half accuracy is 16. Precision represents the number
-                      of bits of each parameter's type
+                      of bits of each parameter's type. Double precision (64, '64' or '64-true'), full precision (32,
+                       '32' or '32-true'), 16bit mixed precision (16, '16', '16-mixed') or bfloat16 mixed precision 
+                       ('bf16', 'bf16-mixed'). Can be used on CPU, GPU, TPUs, HPUs or IPUs.
     :param log_name: 
     :param version_nth: This value is the number of versions of resumed training or the number of versions
                         at which the test began
@@ -52,13 +52,15 @@ English config annotation：
     :param batch_size:
     @可选
     :param version_info:
-    :param gpus:
-    :param tpu_cores:
+    :param accelerator:
+    :param devices:
     :param accumulate_grad_batches:
     :param k_fold:
     :param kth_fold_start: 从第几个fold开始. 若使用重载训练, 则kth_fold_start为重载第几个fold, 第一个值为0.
                            非重载训练的情况下, 可以通过调整该值控制训练的次数;
-    :param precision: 训练精度, 正常精度为32, 半精度为16. 精度代表每个参数的类型所占的位数
+    :param precision: 训练精度, 正常精度为32, 半精度为16. 精度代表每个参数的类型所占的位数.双精度（64、'64'或'64-true'）、
+                      全精度（32、'32'或'32-true'），16位混合精度（16，'16'，'16-mixed'）或bfloat16混合精度（'bf16'，
+                      'bf16-mixed'）。可用于CPU、GPU、TPU、HPU或IPU。
     :param log_name: 
     :param version_nth: 该值为重载训练的版本数或测试开始的版本数
     :param seed:
@@ -71,12 +73,12 @@ English config annotation：
 """
 default_config = {
     'version_info': '',
-    'gpus': None,
-    'tpu_cores': None,
+    'accelerator': "auto",
+    'devices': "auto",
     'accumulate_grad_batches': 1,
     'k_fold': 1,
     'kth_fold_start': 0,
-    'precision': 32,
+    'precision': '16-mixed',
     'log_name': 'lightning_logs',
     'version_nth': None,
     'seed': None,
@@ -95,10 +97,6 @@ def main(config):
     config = {**default_config, **config}
     # Automatic setting config
     # 自动配置参数
-    if torch.cuda.is_available() and config['gpus'] is None and config['tpu_cores'] is None:
-        config['gpus'] = 1
-    if (config['gpus'] is None or config['gpus'] == 0) and config['tpu_cores'] is None:
-        config['precision'] = 32
     for kth_fold in range(config['kth_fold_start'], config['k_fold']):
         print(f'amount of fold is {kth_fold}|fold的数量为{kth_fold}')
         config['kth_fold'] = kth_fold
@@ -117,13 +115,7 @@ def main(config):
         if config['stage'] == 'fit':
             training_module = imported.TrainModule(config=config)
             trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
-                                 gpus=config['gpus'], tpu_cores=config['tpu_cores'], auto_select_gpus=True,
-                                 # If the strategy is None, ddP_spawn strategy is used for multiple Gpus. If
-                                 # a strategy is specified, the strategy is applied regardless of the number of Gpus.
-                                 # 如果策略为None, 则在单GPU时无分布式, 多GPU时采用ddp_spawn策略; 如果指定了策略, 则不论GPU数量,
-                                 # 均采用指定策略
-                                 strategy=DDPStrategy(find_unused_parameters=False) if config['gpus'] is not None and
-                                                                                       config['gpus'] > 1 else None,
+                                 accelerator=config['accelerator'], devices=config['devices'],
                                  max_epochs=config['max_epochs'], log_every_n_steps=1,
                                  accumulate_grad_batches=config['accumulate_grad_batches'],
                                  profiler=config['profiler'],
@@ -146,7 +138,7 @@ def main(config):
                     **{'config': config})
                 trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
                                      profiler=config['profiler'],
-                                     gpus=config['gpus'], tpu_cores=config['tpu_cores'], auto_select_gpus=True,
+                                     accelerator=config['accelerator'], devices=config['devices'],
                                      )
                 trainer.test(training_module, datamodule=dm)
         # The result can be viewed using ’tensorboard --logdir logs‘ in CMD, with the % prefix required
@@ -161,13 +153,13 @@ def main(config):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-nth', type=int, help='task_nth. example format: tasks1', default=None)
+    parser.add_argument('-nth', type=str, help='task_nth. example format: tasks1', default='')
     args = parser.parse_args()
     nth_thread = args.nth
     while True:
         # Obtain all parameters
         # 获得全部参数
-        with open(f"./tasks{nth_thread if nth_thread is not None else ''}.json", "r", encoding='UTF-8') as f:
+        with open(f"./tasks{nth_thread}.json", "r", encoding='UTF-8') as f:
             configs = json.load(f)
         if len(configs) == 0:
             print('over|结束')
