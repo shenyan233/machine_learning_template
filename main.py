@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 import argparse
-from pytorch_lightning.strategies import DDPStrategy
+from pytorch_lightning.accelerators import find_usable_cuda_devices
 from save_checkpoint import SaveCheckpoint
 from pytorch_lightning import loggers as pl_loggers
 import pytorch_lightning as pl
@@ -9,6 +9,7 @@ import importlib
 from data_module import DataModule
 from multiprocessing import cpu_count
 from utils import get_ckpt_path
+import torch
 
 """
 English config annotation：
@@ -74,11 +75,11 @@ English config annotation：
 default_config = {
     'version_info': '',
     'accelerator': "auto",
-    'devices': "auto",
+    'devices': 1,
     'accumulate_grad_batches': 1,
     'k_fold': 1,
     'kth_fold_start': 0,
-    'precision': '16-mixed',
+    'precision': '32-true',
     'log_name': 'lightning_logs',
     'version_nth': None,
     'seed': None,
@@ -115,7 +116,9 @@ def main(config):
         if config['stage'] == 'fit':
             training_module = imported.TrainModule(config=config)
             trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
-                                 accelerator=config['accelerator'], devices=config['devices'],
+                                 accelerator=config['accelerator'],
+                                 devices=find_usable_cuda_devices(config['devices']) if torch.cuda.is_available() else
+                                 config['devices'],
                                  max_epochs=config['max_epochs'], log_every_n_steps=1,
                                  accumulate_grad_batches=config['accumulate_grad_batches'],
                                  profiler=config['profiler'],
@@ -138,7 +141,9 @@ def main(config):
                     **{'config': config})
                 trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
                                      profiler=config['profiler'],
-                                     accelerator=config['accelerator'], devices=config['devices'],
+                                     accelerator=config['accelerator'],
+                                     devices=find_usable_cuda_devices(
+                                         config['devices']) if torch.cuda.is_available() else config['devices'],
                                      )
                 trainer.test(training_module, datamodule=dm)
         # The result can be viewed using ’tensorboard --logdir logs‘ in CMD, with the % prefix required
@@ -167,10 +172,14 @@ if __name__ == "__main__":
         current_key = str(min([int(i) for i in list(configs.keys())]))
         print(f'Current_key is {current_key}')
         config = configs[current_key]
-        main(config=config)
+        try:
+            main(config=config)
+        except RuntimeError as e:
+            print(e)
+            if 'DataLoader worker' in e.args[0]:
+                print('Maybe your memory is too small to use parallel dataloader worker')
         with open(f"./tasks{nth_thread}.json", "r", encoding='UTF-8') as f:
             configs = json.load(f)
         del configs[current_key]
         with open(f"./tasks{nth_thread}.json", "w", encoding='UTF-8') as f:
             f.write(json.dumps(configs, indent=2, ensure_ascii=False))
-

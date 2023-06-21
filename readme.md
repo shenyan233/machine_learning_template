@@ -1,7 +1,7 @@
 # A Machine Learning Template based on Pytorch Lightning
 This project implements the neural network training and testing pipeline based on PyTorch Lightning. In addition to implementing the workflow of PyTorch Lightning, the project also realized adding tasks in the training process through task pool, k-fold cross-validation, saving the training results in .CVS, accepting random seeds for resumed training, and converting the model to .onnx and .tflite.
 
-中文介绍: https://zhuanlan.zhihu.com/p/520694143?
+中文介绍: https://zhuanlan.zhihu.com/p/520694143
 
 # Usage
 ## Configure the network architecture and data set
@@ -38,7 +38,10 @@ The configuration parameters of the task flow is saved in tasks.json.
 ```bash
 pip install -r requirements.txt
 ```
-* cuda and torch need to be installed by itself
+* cuda and torch need to be installed by itself. Recommendation: 
+```bash
+pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+```
 
 ## Set the parameters
 Set the parameters in ./network/{network_name}/config.json, which include model_name, dataset_path, stage, max_epochs, 
@@ -48,7 +51,7 @@ The training parameter 'stage' is 'fit' or 'test', which are represented as trai
 ## Start Train/Test
 In terminal, execute:
 ```bash
-python3 main.py 1
+python3 main.py
 ```
 
 ## Contact
