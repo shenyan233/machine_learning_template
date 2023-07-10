@@ -3,10 +3,28 @@
 import glob
 
 
+def zip_dir(dir_path, result_path):
+    """
+    :param dir_path: Destination folder path|目标文件夹路径
+    :param result_path: result path|压缩后的文件夹路径
+    """
+    import zipfile
+    import os
+
+    ziper = zipfile.ZipFile(result_path, "w", zipfile.ZIP_DEFLATED)
+    for root, dirnames, filenames in os.walk(dir_path):
+        # Delete the root path and compress only files and folders in the target folder
+        # 去掉根路径，只对目标文件夹下的文件及文件夹进行压缩
+        file_path = root.replace(dir_path, '')
+        for filename in filenames:
+            ziper.write(os.path.join(root, filename), os.path.join(file_path, filename))
+    ziper.close()
+
+
 def unzip_dir(zip_path, dir_path):
     """
     :param zip_path: Destination folder path|目标文件夹路径
-    :param dir_path: result path|压缩后的文件夹路径
+    :param dir_path: result path|解压后的文件夹路径
     """
     import zipfile
 
@@ -209,5 +227,5 @@ def change_csv_colume(augment_colume: list):
 
 
 if __name__ == "__main__":
-    load_logs_data('logs','Training loss')
+    load_logs_data('logs', 'Training loss')
     pass
