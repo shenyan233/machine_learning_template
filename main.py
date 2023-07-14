@@ -1,4 +1,5 @@
 import json
+import sys
 from datetime import datetime
 import argparse
 from pytorch_lightning.accelerators import find_usable_cuda_devices
@@ -156,10 +157,30 @@ def main(config):
                 config['version_nth'] += 1
 
 
+class TerminalOutput:
+    def __init__(self):
+        self.stderr = sys.stderr  # 保存原始的 sys.stdout
+        self.KeyboardInterrupt = False  # 用于存储捕获的输出内容
+
+    def write(self, text):
+        if 'KeyboardInterrupt' in text:
+            self.KeyboardInterrupt = True
+        self.stderr.write(text)  # 在终端上显示输出
+
+    def flush(self):
+        self.stderr.flush()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-nth', type=str, help='task_nth. example format: tasks1', default='')
     args = parser.parse_args()
+
+    # 创建自定义输出流对象
+    terminal_output = TerminalOutput()
+    # 将自定义输出流设置为 sys.stdout
+    sys.stderr = terminal_output
+
     nth_thread = args.nth
     while True:
         # Obtain all parameters
@@ -172,14 +193,12 @@ if __name__ == "__main__":
         current_key = str(min([int(i) for i in list(configs.keys())]))
         print(f'Current_key is {current_key}')
         config = configs[current_key]
-        try:
-            main(config=config)
-        except RuntimeError as e:
-            print(e)
-            if 'DataLoader worker' in e.args[0]:
-                print('Maybe your memory is too small to use parallel dataloader worker')
-        with open(f"./tasks{nth_thread}.json", "r", encoding='UTF-8') as f:
-            configs = json.load(f)
-        del configs[current_key]
-        with open(f"./tasks{nth_thread}.json", "w", encoding='UTF-8') as f:
-            f.write(json.dumps(configs, indent=2, ensure_ascii=False))
+        main(config=config)
+        if terminal_output.KeyboardInterrupt:
+            break
+        else:
+            with open(f"./tasks{nth_thread}.json", "r", encoding='UTF-8') as f:
+                configs = json.load(f)
+            del configs[current_key]
+            with open(f"./tasks{nth_thread}.json", "w", encoding='UTF-8') as f:
+                f.write(json.dumps(configs, indent=2, ensure_ascii=False))
