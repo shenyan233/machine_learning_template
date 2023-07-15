@@ -1,3 +1,4 @@
+import numpy
 import torch
 
 
@@ -24,3 +25,30 @@ def del_tensor_ele(arr, index):
     arr1 = arr[0:index]
     arr2 = arr[index + 1:]
     return torch.cat((arr1, arr2), dim=0)
+
+
+def norm(array, column_index):
+    # Extract columns to normalize
+    # 提取要归一化的列
+    column = array[:, column_index]
+    min_value = numpy.min(column)
+    max_value = numpy.max(column)
+    normalized_column = (column - min_value) / (max_value - min_value)
+    array[:, column_index] = normalized_column
+    return array
+
+
+def concat_zeros(x: torch.Tensor, dim, index, num=1):
+    num_dim = len(x.shape)
+    code_left = [':'] * num_dim
+    code_left[dim] = ':index'
+    code_left = ','.join(code_left)
+    code_right = [':'] * num_dim
+    code_right[dim] = 'index:'
+    code_right = ','.join(code_right)
+    left = eval(f'x[{code_left}]')
+    right = eval(f'x[{code_right}]')
+    zeros_shape = list(x.shape)
+    zeros_shape[dim] = num
+    zeros = torch.zeros(tuple(zeros_shape))
+    return torch.concat([left, zeros, right], dim=dim)
