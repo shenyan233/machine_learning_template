@@ -1,6 +1,8 @@
 # Includes some tools that are independent of the model
 # 包含一些与模型无关的工具
+import cProfile
 import glob
+import pstats
 
 
 def zip_dir(dir_path, result_path):
@@ -224,6 +226,42 @@ def load_logs_data(log_name, item='Validation acc'):
 def change_csv_colume(augment_colume: list):
     # the func to extract special info from csv as a colume
     pass
+
+
+def myprofile(func: str):
+    import pandas
+    import os
+
+    cProfile.run(func, 'profile.txt')
+    stats = pstats.Stats('profile.txt')
+    all = {'ncalls1': [],
+           'ncalls2': [],
+           'tottime1': [],
+           'cumtime1': [],
+           'ncalls3': [],
+           'ncalls4': [],
+           'tottime2': [],
+           'cumtime2': [],
+           'name': [], }
+    for i in list(stats.stats.keys()):
+        name = str(i)
+        all['ncalls1'].append(stats.stats[i][0])
+        all['ncalls2'].append(stats.stats[i][1])
+        all['tottime1'].append(stats.stats[i][2])
+        all['cumtime1'].append(stats.stats[i][3])
+        if len(stats.stats[i][4]) != 0:
+            all['ncalls3'].append(stats.stats[i][4][list(stats.stats[i][4].keys())[0]][0])
+            all['ncalls4'].append(stats.stats[i][4][list(stats.stats[i][4].keys())[0]][1])
+            all['tottime2'].append(stats.stats[i][4][list(stats.stats[i][4].keys())[0]][2])
+            all['cumtime2'].append(stats.stats[i][4][list(stats.stats[i][4].keys())[0]][3])
+        else:
+            all['ncalls3'].append('')
+            all['ncalls4'].append('')
+            all['tottime2'].append('')
+            all['cumtime2'].append('')
+        all['name'].append(name)
+    pandas.DataFrame(all).to_csv('profile.csv', index=False)
+    os.remove('profile.txt')
 
 
 if __name__ == "__main__":

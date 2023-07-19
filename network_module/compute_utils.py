@@ -33,7 +33,10 @@ def norm(array, column_index):
     column = array[:, column_index]
     min_value = numpy.min(column)
     max_value = numpy.max(column)
-    normalized_column = (column - min_value) / (max_value - min_value)
+    if (max_value - min_value) != 0:
+        normalized_column = (column - min_value) / (max_value - min_value)
+    else:
+        normalized_column = column * 0
     array[:, column_index] = normalized_column
     return array
 
