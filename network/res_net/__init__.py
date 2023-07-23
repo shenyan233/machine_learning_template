@@ -1,8 +1,8 @@
 import time
 import pytorch_lightning as pl
 import torch
-from torch import nn
 from network.res_net.res_net import resnet56
+from network_module import swats
 
 
 class TrainModule(pl.LightningModule):
@@ -12,55 +12,52 @@ class TrainModule(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = resnet56()
-        self.loss = nn.CrossEntropyLoss()
+        self.loss = torch.nn.CrossEntropyLoss()
         self.evaluate = Evaluate()
 
-    def forward(self, input):
-        pred = self.net(input)
-        return pred
+    def forward(self, x):
+        logits = self.net(x)
+        return logits
 
     def training_step(self, batch, batch_idx):
-        _, input, label = batch
-        pred = self.forward(input)
-        loss = self.loss(pred, label)
+        _, x, label = batch
+        logits = self.forward(x)
+        loss = self.loss(logits, label)
         self.log("Training loss", loss)
-        evaluation = self.evaluate.evaluate(pred, label)
+        evaluation = self.evaluate.evaluate(logits, label)
         self.log(f"Training {self.evaluate.name}", evaluation)
         # TODO log learning rate
         return loss
 
     def validation_step(self, batch, batch_idx):
-        _, input, label = batch
-        pred = self.forward(input)
-        loss = self.loss(pred, label)
+        _, x, label = batch
+        logits = self.forward(x)
+        loss = self.loss(logits, label)
         self.log("Validation loss", loss)
-        # TODO modify the method of computing evaluation index
-        evaluation = self.evaluate.evaluate(pred, label)
+        evaluation = self.evaluate.evaluate(logits, label)
         self.log(f"Validation {self.evaluate.name}", evaluation)
         return loss
 
     def test_step(self, batch, batch_idx):
-        _, input, label = batch
+        _, x, label = batch
         if self.time_sum is None:
             time_start = time.time()
-            pred = self.forward(input)
+            logits = self.forward(x)
             time_end = time.time()
             self.time_sum = time_end - time_start
             print(f'\nInference time is {self.time_sum:f}|推理时间为: {self.time_sum:f}')
         else:
-            pred = self.forward(input)
-        loss = self.loss(pred, label)
+            logits = self.forward(x)
+        loss = self.loss(logits, label)
         self.log("Test loss", loss)
-        evaluation = self.evaluate.evaluate(pred, label)
+        evaluation = self.evaluate.evaluate(logits, label)
         self.log(f"Test {self.evaluate.name}", evaluation)
         return loss
 
     def configure_optimizers(self):
-        lr = 0.1 if 'lr' not in self.config else self.config['lr']
-        optimizer = torch.optim.SGD(self.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100, 150], last_epoch=-1)
-        # TODO 实现warmup
-        return [optimizer], [lr_scheduler]
+        # optimizer = torch.optim.Adam(self.parameters(), weight_decay=1e-4, amsgrad=True)
+        optimizer = swats.SWATS(self.parameters(), weight_decay=1e-4, amsgrad=True)
+        return optimizer
 
     def load_pretrain_parameters(self):
         """
@@ -90,4 +87,3 @@ class Evaluate:
             correct_k = correct[:k].view(-1).float().sum(0)
             result.append(correct_k.mul_(100.0 / batch_size))
         return result[0]
-
