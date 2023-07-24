@@ -55,8 +55,11 @@ class TrainModule(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        # optimizer = torch.optim.Adam(self.parameters(), weight_decay=1e-4, amsgrad=True)
-        optimizer = swats.SWATS(self.parameters(), weight_decay=1e-4, amsgrad=True)
+        if 'amsgrad' not in self.config:
+            amsgrad = False
+        else:
+            amsgrad = self.config['amsgrad']
+        optimizer = torch.optim.Adam(self.parameters(), weight_decay=1e-4, amsgrad=amsgrad)
         return optimizer
 
     def load_pretrain_parameters(self):

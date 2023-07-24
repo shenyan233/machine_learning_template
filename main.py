@@ -31,8 +31,8 @@ English config annotation：
                            the number of resumed folds, with the first value being 0. In the case of
                            resumed training, the number of training can be controlled by adjusting the value.
     :param precision: Training accuracy, normal accuracy is 32, half accuracy is 16. Precision represents the number
-                      of bits of each parameter's type. Double precision (64, '64' or '64-true'), full precision (32,
-                       '32' or '32-true'), 16bit mixed precision (16, '16', '16-mixed') or bfloat16 mixed precision 
+                      of bits of each parameter's type. Double precision (64, '64' or '64-true'), full precision (
+                      '32-true'), 16bit mixed precision ('16-mixed') or bfloat16 mixed precision 
                        ('bf16', 'bf16-mixed'). Can be used on CPU, GPU, TPUs, HPUs or IPUs.
     :param log_name: 
     :param version_nth: This value is the number of versions of resumed training or the number of versions
@@ -61,7 +61,7 @@ English config annotation：
     :param kth_fold_start: 从第几个fold开始. 若使用重载训练, 则kth_fold_start为重载第几个fold, 第一个值为0.
                            非重载训练的情况下, 可以通过调整该值控制训练的次数;
     :param precision: 训练精度, 正常精度为32, 半精度为16. 精度代表每个参数的类型所占的位数.双精度（64、'64'或'64-true'）、
-                      全精度（32、'32'或'32-true'），16位混合精度（16，'16'，'16-mixed'）或bfloat16混合精度（'bf16'，
+                      全精度（'32-true'），16位混合精度（'16-mixed'）或bfloat16混合精度（'bf16'，
                       'bf16-mixed'）。可用于CPU、GPU、TPU、HPU或IPU。
     :param log_name: 
     :param version_nth: 该值为重载训练的版本数或测试开始的版本数
@@ -175,6 +175,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-nth', type=str, help='task_nth. example format: tasks1', default='')
     args = parser.parse_args()
+
+    torch.set_float32_matmul_precision("high")
 
     # 创建自定义输出流对象
     terminal_output = TerminalOutput()

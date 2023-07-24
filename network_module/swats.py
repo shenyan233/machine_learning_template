@@ -117,9 +117,9 @@ class SWATS(torch.optim.Optimizer):
 
                     grad.mul_(1 - beta1)
                     if group['nesterov']:
-                        grad.add_(beta1, buf)
+                        grad.add_(buf, alpha=beta1)
 
-                    w.data.add_(-group['lr'], grad)
+                    w.data.add_(grad, alpha=-group['lr'])
                     continue
 
                 # decay the first and second moment running average coefficient
@@ -157,12 +157,13 @@ class SWATS(torch.optim.Optimizer):
                     if state['step'] > 1 and \
                             corrected_exp_avg.allclose(scaling, rtol=1e-6) and \
                             corrected_exp_avg > 0:
-                        group['phase'] = 'SGD'
-                        group['lr'] = corrected_exp_avg.item()
-                        if group['verbose']:
-                            print('Switching to SGD after '
-                                  '{} steps with lr {:.5f} '
-                                  'and momentum {:.5f}.'.format(
-                                state['step'], group['lr'], beta1))
+                        pass
+                        # group['phase'] = 'SGD'
+                        # group['lr'] = corrected_exp_avg.item()
+                        # if group['verbose']:
+                        #     print('Switching to SGD after '
+                        #           '{} steps with lr {:.5f} '
+                        #           'and momentum {:.5f}.'.format(
+                        #         state['step'], group['lr'], beta1))
 
         return loss
