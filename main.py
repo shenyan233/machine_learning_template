@@ -45,6 +45,7 @@ English config annotation：
     :param gradient_clip_val:
     :param is_check:
     :param saved_every_n_epochs:
+    :param lr_decay:
 
 中文config注释：
     @必填
@@ -74,6 +75,7 @@ English config annotation：
     :param gradient_clip_val:
     :param is_check:
     :param saved_every_n_epochs:
+    :param lr_decay:
 """
 default_config = {
     'version_info': '',
@@ -92,7 +94,8 @@ default_config = {
     'profiler': None,
     'gradient_clip_val': None,
     'is_check': False,
-    'saved_every_n_epochs': -1
+    'saved_every_n_epochs': -1,
+    'lr_decay': 1
 }
 
 

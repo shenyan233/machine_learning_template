@@ -2,7 +2,6 @@ import time
 import pytorch_lightning as pl
 import torch
 from network.res_net.res_net import resnet56
-from network_module import swats
 
 
 class TrainModule(pl.LightningModule):
@@ -18,6 +17,13 @@ class TrainModule(pl.LightningModule):
     def forward(self, x):
         logits = self.net(x)
         return logits
+
+    def on_train_start(self) -> None:
+        lr_decay = self.config['lr_decay']
+        self.trainer.optimizers[0].param_groups[0]['lr'] *= lr_decay
+        now = self.trainer.optimizers[0].param_groups[0]['lr']
+        if lr_decay != 1:
+            print(f'lr multiplied by {lr_decay}, now is {now}')
 
     def training_step(self, batch, batch_idx):
         _, x, label = batch
