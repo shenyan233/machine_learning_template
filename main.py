@@ -44,6 +44,7 @@ English config annotation：
     :param profiler:
     :param gradient_clip_val:
     :param is_check:
+    :param saved_every_n_epochs:
 
 中文config注释：
     @必填
@@ -72,6 +73,7 @@ English config annotation：
     :param profiler:
     :param gradient_clip_val:
     :param is_check:
+    :param saved_every_n_epochs:
 """
 default_config = {
     'version_info': '',
@@ -89,7 +91,8 @@ default_config = {
     'save_top_k': 1,
     'profiler': None,
     'gradient_clip_val': None,
-    'is_check': False
+    'is_check': False,
+    'saved_every_n_epochs': -1
 }
 
 
@@ -176,7 +179,8 @@ if __name__ == "__main__":
     parser.add_argument('-nth', type=str, help='task_nth. example format: tasks1', default='')
     args = parser.parse_args()
 
-    torch.set_float32_matmul_precision("high")
+    if torch.cuda.is_available():
+        torch.set_float32_matmul_precision("high")
 
     # 创建自定义输出流对象
     terminal_output = TerminalOutput()

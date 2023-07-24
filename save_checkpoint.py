@@ -59,6 +59,12 @@ class SaveCheckpoint(ModelCheckpoint):
         epoch = monitor_candidates.get("epoch")
         version_name = self.get_version_name(self.dirpath)
         log_path = '/'.join(re.split(r'[/|\\]', self.dirpath)[0:2]) + '/'
+
+        if epoch >= self.no_save_before_epoch and self.config['saved_every_n_epochs'] != -1 and epoch % self.config[
+            'saved_every_n_epochs'] == 0:
+            filepath = self._get_metric_interpolated_filepath_name(monitor_candidates, trainer)
+            self._save_checkpoint(trainer, filepath)
+
         if self.monitor is None or self.save_top_k == 0 or epoch < self.no_save_before_epoch:
             return
 
