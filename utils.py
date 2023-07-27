@@ -244,7 +244,7 @@ def change_csv_colume(augment_colume: list):
     columns.remove('config')
     columns.append('config')
     info = info.reindex(columns=columns)
-    info.to_csv('./logs/lightning_logs/version_info.csv', index=False)
+    info.to_csv('./logs/lightning_logs/new_version_info.csv', index=False)
     print('end')
 
 
@@ -285,5 +285,5 @@ def myprofile(func: str):
 
 
 if __name__ == "__main__":
-    change_csv_colume(['amsgrad'])
+    change_csv_colume(['amsgrad', 'version_nth'])
     pass

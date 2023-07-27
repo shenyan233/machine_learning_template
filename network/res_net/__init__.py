@@ -62,7 +62,7 @@ class TrainModule(pl.LightningModule):
 
     def configure_optimizers(self):
         if 'amsgrad' not in self.config:
-            amsgrad = False
+            amsgrad = True
         else:
             amsgrad = self.config['amsgrad']
         optimizer = torch.optim.Adam(self.parameters(), weight_decay=1e-4, amsgrad=amsgrad)
