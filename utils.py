@@ -4,6 +4,8 @@ import cProfile
 import glob
 import pstats
 
+import pandas
+
 
 def zip_dir(dir_path, result_path):
     """
@@ -225,7 +227,25 @@ def load_logs_data(log_name, item='Validation acc'):
 
 def change_csv_colume(augment_colume: list):
     # the func to extract special info from csv as a colume
-    pass
+    import json
+
+    info = pandas.read_csv('./logs/lightning_logs/version_info.csv')
+    for line in range(len(info)):
+        json_config = json.loads(info.loc[line, 'config'].replace('\'', '\"')
+                                 .replace('None', 'null')
+                                 .replace('False', 'false')
+                                 .replace('True', 'true'))
+        for colume in augment_colume:
+            if colume in json_config:
+                info.loc[line, colume] = json_config[colume]
+            else:
+                info.loc[line, colume] = ''
+    columns = info.columns.to_list().copy()
+    columns.remove('config')
+    columns.append('config')
+    info = info.reindex(columns=columns)
+    info.to_csv('./logs/lightning_logs/version_info.csv', index=False)
+    print('end')
 
 
 def myprofile(func: str):
@@ -265,5 +285,5 @@ def myprofile(func: str):
 
 
 if __name__ == "__main__":
-    load_logs_data('logs', 'Training loss')
+    change_csv_colume(['amsgrad'])
     pass
