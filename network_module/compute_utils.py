@@ -2,13 +2,11 @@ import numpy
 import torch
 
 
-def one_hot_encoder(input_tensor, n_classes):
-    tensor_list = []
-    for i in range(n_classes):
-        temp_prob = input_tensor == i  # * torch.ones_like(input_tensor)
-        tensor_list.append(temp_prob.unsqueeze(1))
-    output_tensor = torch.cat(tensor_list, dim=1)
-    return output_tensor.long()
+def one_hot_encoder(targets, n_classes):
+    class_mask = targets.data.new(targets.size(0), n_classes).fill_(0)
+    ids = targets.view(-1, 1)
+    class_mask.scatter_(1, ids.data, 1.)
+    return class_mask
 
 
 def torch_nanmean(x):

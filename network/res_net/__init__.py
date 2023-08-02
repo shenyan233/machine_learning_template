@@ -11,7 +11,7 @@ class TrainModule(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = resnet56()
-        self.loss = torch.nn.CrossEntropyLoss()
+        self.losses = [torch.nn.CrossEntropyLoss()]
         self.evaluate = Evaluate()
 
     def forward(self, x):
@@ -28,7 +28,7 @@ class TrainModule(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         _, x, label = batch
         logits = self.forward(x)
-        loss = self.loss(logits, label)
+        loss = sum([loss(logits, label) for loss in self.losses])
         self.log("Training loss", loss)
         evaluation = self.evaluate.evaluate(logits, label)
         self.log(f"Training {self.evaluate.name}", evaluation)
@@ -38,7 +38,7 @@ class TrainModule(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         _, x, label = batch
         logits = self.forward(x)
-        loss = self.loss(logits, label)
+        loss = sum([loss(logits, label) for loss in self.losses])
         self.log("Validation loss", loss)
         evaluation = self.evaluate.evaluate(logits, label)
         self.log(f"Validation {self.evaluate.name}", evaluation)
@@ -54,7 +54,7 @@ class TrainModule(pl.LightningModule):
             print(f'\nInference time is {self.time_sum:f}|推理时间为: {self.time_sum:f}')
         else:
             logits = self.forward(x)
-        loss = self.loss(logits, label)
+        loss = sum([loss(logits, label) for loss in self.losses])
         self.log("Test loss", loss)
         evaluation = self.evaluate.evaluate(logits, label)
         self.log(f"Test {self.evaluate.name}", evaluation)
