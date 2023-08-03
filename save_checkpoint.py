@@ -21,8 +21,8 @@ class SaveCheckpoint(ModelCheckpoint):
         通过回调实现checkpoint的保存逻辑, 同时具有回调函数中定义on_validation_end等功能.
         """
         imported = importlib.import_module('network.%(model_name)s' % config)
-        evalute = imported.Evaluate()
-        monitor, monitor_mode = evalute.name, evalute.best_mode
+        evaluate = imported.Evaluate()
+        monitor, monitor_mode = evaluate.evaluate[0].name, evaluate.evaluate[0].best_mode
         super().__init__(every_n_epochs=config['every_n_epochs'], verbose=verbose, mode=monitor_mode,
                          monitor='Validation ' + monitor, save_top_k=config['save_top_k'], save_last=save_last)
         self.config = config

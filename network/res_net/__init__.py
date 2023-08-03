@@ -2,6 +2,7 @@ import time
 import pytorch_lightning as pl
 import torch
 from network.res_net.res_net import resnet56
+from network_module.metric import Accuracy
 
 
 class TrainModule(pl.LightningModule):
@@ -30,8 +31,9 @@ class TrainModule(pl.LightningModule):
         logits = self.forward(x)
         loss = sum([loss(logits, label) for loss in self.losses])
         self.log("Training loss", loss)
-        evaluation = self.evaluate.evaluate(logits, label)
-        self.log(f"Training {self.evaluate.name}", evaluation)
+        for metric in self.evaluate.evaluate:
+            evaluation = metric.evaluate(logits, label)
+            self.log(f"Training {metric.name}", evaluation)
         # TODO log learning rate
         return loss
 
@@ -40,8 +42,9 @@ class TrainModule(pl.LightningModule):
         logits = self.forward(x)
         loss = sum([loss(logits, label) for loss in self.losses])
         self.log("Validation loss", loss)
-        evaluation = self.evaluate.evaluate(logits, label)
-        self.log(f"Validation {self.evaluate.name}", evaluation)
+        for metric in self.evaluate.evaluate:
+            evaluation = metric.evaluate(logits, label)
+            self.log(f"Training {metric.name}", evaluation)
         return loss
 
     def test_step(self, batch, batch_idx):
@@ -56,8 +59,9 @@ class TrainModule(pl.LightningModule):
             logits = self.forward(x)
         loss = sum([loss(logits, label) for loss in self.losses])
         self.log("Test loss", loss)
-        evaluation = self.evaluate.evaluate(logits, label)
-        self.log(f"Test {self.evaluate.name}", evaluation)
+        for metric in self.evaluate.evaluate:
+            evaluation = metric.evaluate(logits, label)
+            self.log(f"Training {metric.name}", evaluation)
         return loss
 
     def configure_optimizers(self):
@@ -77,22 +81,5 @@ class TrainModule(pl.LightningModule):
 
 
 class Evaluate:
-    name = 'acc'
-    best_mode = 'max'
-
-    def evaluate(self, output, target):
-        """Computes the precision@k for the specified values of k"""
-        topk = (1,)
-
-        maxk = max(topk)
-        batch_size = target.size(0)
-
-        _, pred = output.topk(maxk, 1, True, True)
-        pred = pred.t()
-        correct = pred.eq(target.view(1, -1).expand_as(pred))
-
-        result = []
-        for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0)
-            result.append(correct_k.mul_(100.0 / batch_size))
-        return result[0]
+    def __init__(self):
+         self.evaluate = [Accuracy()]
