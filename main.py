@@ -120,12 +120,27 @@ def main(config):
         # SaveCheckpoint的创建需要在TrainModule之前, 以保证网络参数初始化的确定性
         save_checkpoint = SaveCheckpoint(config=config)
         imported = importlib.import_module('network.%(model_name)s' % config)
+        if torch.cuda.is_available() and config['accelerator'] != 'cpu' and config['devices'] == 1:
+            devices_last = [-1]
+            while True:
+                devices = find_usable_cuda_devices(config['devices'])
+                if devices_last[0] == devices[0]:
+                    assert False, 'gpu均被占用'
+                try:
+                    with torch.cuda.device(devices[0]):
+                        torch.tensor([1.0]).cuda()
+                    break
+                except:
+                    devices_last = devices
+                    continue
+            print('设备:', devices)
+        else:
+            devices = config['devices']
         if config['stage'] == 'fit':
             training_module = imported.TrainModule(config=config)
             trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
                                  accelerator=config['accelerator'],
-                                 devices=find_usable_cuda_devices(config['devices']) if torch.cuda.is_available() else
-                                 config['devices'],
+                                 devices=devices,
                                  max_epochs=config['max_epochs'], log_every_n_steps=1,
                                  accumulate_grad_batches=config['accumulate_grad_batches'],
                                  profiler=config['profiler'],
@@ -149,8 +164,7 @@ def main(config):
                 trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
                                      profiler=config['profiler'],
                                      accelerator=config['accelerator'],
-                                     devices=find_usable_cuda_devices(
-                                         config['devices']) if torch.cuda.is_available() else config['devices'],
+                                     devices=devices,
                                      )
                 trainer.test(training_module, datamodule=dm)
         # The result can be viewed using ’tensorboard --logdir logs‘ in CMD, with the % prefix required

@@ -90,8 +90,8 @@ def visual_label(dataset_path, n_classes):
             quality=95)
 
 
-def get_ckpt_path(version_nth: int, log_name):
-    checkpoints_path = f'./logs/{log_name}/version_{version_nth}/checkpoints'
+def get_ckpt_path(version_nth: int, log_name, path='.'):
+    checkpoints_path = f'{path}/logs/{log_name}/version_{version_nth}/checkpoints'
     ckpt_path = glob.glob(checkpoints_path + '/*.ckpt')
     return ckpt_path[0].replace('\\', '/')
 

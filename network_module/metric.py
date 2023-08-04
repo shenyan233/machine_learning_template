@@ -57,6 +57,9 @@ class Precision:
         fp = torch.sum(output_one_hot * (1 - target_one_hot), dim=0)  # 计算False Positive（预测为1但标签为0）的数量
 
         precision = tp / (tp + fp + 1e-8)
+
+        if precision.device != self.class_weight.device:
+            self.class_weight = self.class_weight.type_as(precision)
         if self.class_weight is None:
             return precision.mean()
         else:
