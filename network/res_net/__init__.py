@@ -30,6 +30,7 @@ class TrainModule(pl.LightningModule):
         _, x, label = batch
         logits = self.forward(x)
         loss = sum([loss(logits, label) for loss in self.losses])
+        assert not torch.isnan(loss)
         self.log("Training loss", loss)
         for metric in self.evaluate.evaluate:
             evaluation = metric.evaluate(logits, label)
