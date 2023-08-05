@@ -44,7 +44,7 @@ class TrainModule(pl.LightningModule):
         self.log("Validation loss", loss)
         for metric in self.evaluate.evaluate:
             evaluation = metric.evaluate(logits, label)
-            self.log(f"Training {metric.name}", evaluation)
+            self.log(f"Validation {metric.name}", evaluation)
         return loss
 
     def test_step(self, batch, batch_idx):
@@ -61,7 +61,7 @@ class TrainModule(pl.LightningModule):
         self.log("Test loss", loss)
         for metric in self.evaluate.evaluate:
             evaluation = metric.evaluate(logits, label)
-            self.log(f"Training {metric.name}", evaluation)
+            self.log(f"Test {metric.name}", evaluation)
         return loss
 
     def configure_optimizers(self):
