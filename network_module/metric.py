@@ -1,3 +1,4 @@
+import pandas
 import torch
 from network_module.compute_utils import one_hot_encoder
 
@@ -23,22 +24,30 @@ class Accuracy:
     name = 'acc'
     best_mode = 'max'
 
+    def __init__(self, do_record=False):
+        self.do_record = do_record
+
     def evaluate(self, output, target):
         """Computes the precision@k for the specified values of k"""
+        output = output.softmax(1)
         topk = (1,)
 
         maxk = max(topk)
         batch_size = target.size(0)
 
-        _, pred = output.topk(maxk, 1, True, True)
+        prob, pred = output.topk(maxk, 1, True, True)
+
         pred = pred.t()
         correct = pred.eq(target.view(1, -1).expand_as(pred))
 
-        result = []
-        for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0)
-            result.append(correct_k.mul_(100.0 / batch_size))
-        return result[0]
+        if self.do_record:
+            valid_prob = prob[((pred == 0) + (pred == 2)).t()]
+            right_prob = prob[((pred == 0) + (pred == 2)).t() * correct.t()]
+            false_prob = prob[((pred == 0) + (pred == 2)).t() * ~correct.t()]
+
+            pandas.DataFrame(valid_prob.numpy()).to_csv('valid_prob.csv', header=False, index=False, mode='a')
+            pandas.DataFrame(right_prob.numpy()).to_csv('right_prob.csv', header=False, index=False, mode='a')
+            pandas.DataFrame(false_prob.numpy()).to_csv('false_prob.csv', header=False, index=False, mode='a')
 
 
 class Precision:

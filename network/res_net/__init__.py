@@ -13,7 +13,7 @@ class TrainModule(pl.LightningModule):
         self.config = config
         self.net = resnet56()
         self.losses = [torch.nn.CrossEntropyLoss()]
-        self.evaluate = Evaluate()
+        self.evaluate = Evaluate(stage=config['stage'])
 
     def forward(self, x):
         logits = self.net(x)
@@ -82,5 +82,9 @@ class TrainModule(pl.LightningModule):
 
 
 class Evaluate:
-    def __init__(self):
-         self.evaluate = [Accuracy()]
+    def __init__(self, stage):
+        if stage == 'test':
+            do_record = True
+        else:
+            do_record = False
+        self.evaluate = [Accuracy(do_record=do_record)]
