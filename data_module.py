@@ -110,7 +110,7 @@ class DataModule(pl.LightningDataModule):
     def test_dataloader(self):
         test_batch_size = 1
         for num in range(self.config['batch_size']):
-            if len(self.val_dataset) % (self.config['batch_size'] - num) == 0:
+            if len(self.test_dataset) % (self.config['batch_size'] - num) == 0:
                 test_batch_size = self.config['batch_size'] - num
                 break
         return DataLoader(self.test_dataset, batch_size=test_batch_size, shuffle=False,
