@@ -26,7 +26,8 @@ English config annotation：
     :param accelerator:
     :param devices:
     :param accumulate_grad_batches:
-    :param k_fold:
+    :param k_fold: This parameter can control the number of repetitions of training under the same conditions, 
+                   and can automatically segment the k-fold dataset when there is a demand for k-fold data.
     :param kth_fold_start: Start with the number of folds. If resumed training is used, kth_fold_start is
                            the number of resumed folds, with the first value being 0. In the case of
                            resumed training, the number of training can be controlled by adjusting the value.
@@ -59,7 +60,7 @@ English config annotation：
     :param accelerator:
     :param devices:
     :param accumulate_grad_batches:
-    :param k_fold:
+    :param k_fold: 该参数可以控制相同条件下重复训练的次数，在具有k折数据需求下，可以自动分割k折数据集
     :param kth_fold_start: 从第几个fold开始. 若使用重载训练, 则kth_fold_start为重载第几个fold, 第一个值为0.
                            非重载训练的情况下, 可以通过调整该值控制训练的次数;
     :param precision: 训练精度, 正常精度为32, 半精度为16. 精度代表每个参数的类型所占的位数.双精度（64、'64'或'64-true'）、
@@ -160,6 +161,7 @@ def main(config):
                 print('testing|测试')
                 training_module = imported.TrainModule.load_from_checkpoint(
                     checkpoint_path=load_checkpoint_path,
+                    map_location=torch.device('cpu') if not torch.cuda.is_available() else None,
                     **{'config': config})
                 trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
                                      profiler=config['profiler'],
@@ -172,6 +174,9 @@ def main(config):
         # 在cmd中使用tensorboard --logdir logs命令可以查看结果，在Jupyter格式下需要加%前缀
         if config['version_nth'] is not None:
             if config['stage'] == 'fit':
+                # When performing k-fold breakpoint overloading training, only the first version performs overloading
+                # training, so after the first version ends, set the version number to None
+                # 当进行k-fold断点重载训练时，只有第一个版本进行重载训练，因此第一个版本结束后设置版本号为None
                 config['version_nth'] = None
             elif config['stage'] == 'test':
                 config['version_nth'] += 1
