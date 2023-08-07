@@ -284,6 +284,22 @@ def myprofile(func: str):
     os.remove('profile.txt')
 
 
+def eval_prob_distribution():
+    import matplotlib.pyplot as plt
+    valid_prob = pandas.read_csv('valid_prob.csv', header=None)
+    right_prob = pandas.read_csv('right_prob.csv', header=None)
+    false_prob = pandas.read_csv('false_prob.csv', header=None)
+
+    max = valid_prob.max()[0]
+    min = valid_prob.min()[0]
+
+    plt.hist(valid_prob, range=(min, max), bins=10, label='valid_prob')
+    plt.hist(false_prob, range=(min, max), bins=10, label='false_prob')
+    plt.hist(right_prob, range=(min, max), bins=10, label='right_prob')
+    plt.legend()
+    plt.show()
+
+
 if __name__ == "__main__":
-    change_csv_colume(['amsgrad', 'version_nth'])
+    eval_prob_distribution()
     pass
