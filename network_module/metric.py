@@ -49,6 +49,12 @@ class Accuracy:
             pandas.DataFrame(right_prob.numpy()).to_csv('right_prob.csv', header=False, index=False, mode='a')
             pandas.DataFrame(false_prob.numpy()).to_csv('false_prob.csv', header=False, index=False, mode='a')
 
+        result = []
+        for k in topk:
+            correct_k = correct[:k].view(-1).float().sum(0)
+            result.append(correct_k.mul_(100.0 / batch_size))
+        return result[0]
+
 
 class Precision:
     name = 'precision'
