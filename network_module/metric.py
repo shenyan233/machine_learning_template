@@ -45,9 +45,9 @@ class Accuracy:
             right_prob = prob[((pred == 0) + (pred == 2)).t() * correct.t()]
             false_prob = prob[((pred == 0) + (pred == 2)).t() * ~correct.t()]
 
-            pandas.DataFrame(valid_prob.numpy()).to_csv('valid_prob.csv', header=False, index=False, mode='a')
-            pandas.DataFrame(right_prob.numpy()).to_csv('right_prob.csv', header=False, index=False, mode='a')
-            pandas.DataFrame(false_prob.numpy()).to_csv('false_prob.csv', header=False, index=False, mode='a')
+            pandas.DataFrame(valid_prob.cpu().numpy()).to_csv('valid_prob.csv', header=False, index=False, mode='a')
+            pandas.DataFrame(right_prob.cpu().numpy()).to_csv('right_prob.csv', header=False, index=False, mode='a')
+            pandas.DataFrame(false_prob.cpu().numpy()).to_csv('false_prob.csv', header=False, index=False, mode='a')
 
         result = []
         for k in topk:
