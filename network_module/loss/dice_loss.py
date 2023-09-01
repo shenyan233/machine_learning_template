@@ -1,5 +1,7 @@
 import torch
 
+from global_param import min_value
+
 
 class DiceLoss(torch.nn.Module):
     def __init__(self, n_classes):
@@ -21,10 +23,9 @@ class DiceLoss(torch.nn.Module):
         assert input.size() == target.size(), 'predict {} & target {} shape do not match'.format(input.size(), target.size())
 
         target = target.float()
-        smooth = 1e-5
         intersect = torch.sum(input * target, dim=0)
         y_sum = torch.sum(target, dim=0)
         z_sum = torch.sum(input, dim=0)
-        loss = (2 * intersect + smooth) / (z_sum + y_sum + smooth)
+        loss = (2 * intersect + min_value) / (z_sum + y_sum + min_value)
         loss = 1 - (weight * loss).mean()
         return loss

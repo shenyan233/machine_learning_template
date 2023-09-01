@@ -1,11 +1,11 @@
 # get_fit_dataset_lists or get_dataset_list must be overridden
 # get_test_dataset_lists must be overridden
-datasets_path = '/home/shen/dataset'
 import importlib
 import os
 import random
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
+from global_param import datasets_path
 
 
 class DataModule(pl.LightningDataModule):

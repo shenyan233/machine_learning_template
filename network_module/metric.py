@@ -1,23 +1,17 @@
 import pandas
 import torch
+from global_param import min_value
 from network_module.compute_utils import one_hot_encoder
 
 
-class F1score:
-    name = 'f1'
-    best_mode = 'max'
-
-    def evaluate(self, output, target):
-        output_index = output.argmax(1)
-        output_one_hot = one_hot_encoder(output_index, output.size(1))
-        target_one_hot = one_hot_encoder(target, output.size(1))
-
-        tp = torch.sum(output_one_hot * target_one_hot, dim=0)  # 计算True Positive（预测为1且标签为1）的数量
-        fp = torch.sum(output_one_hot * (1 - target_one_hot), dim=0)  # 计算False Positive（预测为1但标签为0）的数量
-        fn = torch.sum((1 - output_one_hot) * target_one_hot, dim=0)  # 计算False Negative（预测为0但标签为1）的数量
-
-        f1 = (2 * tp) / (2 * tp + fn + fp + 1e-8)
-        return f1.mean()
+def fast_hist(pred, label, n_classes):
+    # confusion matrix
+    # np.bincount counts the number of occurrences of each of n**2 numbers from 0 to n**2-1. return value shape (n, n)
+    # The vertical axis is the label and the horizontal axis is the predicted value。
+    # 混淆矩阵
+    # np.bincount计算了从0到n**2-1这n**2个数中每个数出现的次数，返回值形状(n, n)
+    # 竖轴为标签，横轴为预测值
+    return torch.bincount(n_classes * label + pred, minlength=n_classes ** 2).reshape(n_classes, n_classes)
 
 
 class Accuracy:
@@ -61,7 +55,8 @@ class Precision:
     best_mode = 'max'
 
     def __init__(self, class_weight=None):
-        self.class_weight = torch.tensor(class_weight)
+        if class_weight is not None:
+            self.class_weight = torch.tensor(class_weight)
 
     def evaluate(self, output, target):
         output_index = output.argmax(1)
@@ -71,11 +66,26 @@ class Precision:
         tp = torch.sum(output_one_hot * target_one_hot, dim=0)  # 计算True Positive（预测为1且标签为1）的数量
         fp = torch.sum(output_one_hot * (1 - target_one_hot), dim=0)  # 计算False Positive（预测为1但标签为0）的数量
 
-        precision = tp / (tp + fp + 1e-8)
+        precision = tp / (tp + fp + min_value)
 
-        if precision.device != self.class_weight.device:
-            self.class_weight = self.class_weight.type_as(precision)
         if self.class_weight is None:
             return precision.mean()
         else:
             return torch.sum(precision * self.class_weight) / torch.sum(self.class_weight)
+
+
+class F1score:
+    name = 'f1'
+    best_mode = 'max'
+
+    def evaluate(self, output, target):
+        output_index = output.argmax(1)
+        output_one_hot = one_hot_encoder(output_index, output.size(1))
+        target_one_hot = one_hot_encoder(target, output.size(1))
+
+        tp = torch.sum(output_one_hot * target_one_hot, dim=0)  # 计算True Positive（预测为1且标签为1）的数量
+        fp = torch.sum(output_one_hot * (1 - target_one_hot), dim=0)  # 计算False Positive（预测为1但标签为0）的数量
+        fn = torch.sum((1 - output_one_hot) * target_one_hot, dim=0)  # 计算False Negative（预测为0但标签为1）的数量
+
+        f1 = (2 * tp) / (2 * tp + fn + fp + min_value)
+        return f1.mean()

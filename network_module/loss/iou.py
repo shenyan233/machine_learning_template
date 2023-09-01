@@ -4,9 +4,8 @@ Functions and classes related to calculating iOU, including calculating IOU Loss
 """
 import torch
 from torch import nn
-
-from network_module.classify_eval import fast_hist
 from network_module.compute_utils import torch_nanmean
+from network_module.metric import fast_hist
 
 
 def per_class_iou(hist):
