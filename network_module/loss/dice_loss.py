@@ -1,26 +1,28 @@
 import torch
 
 from global_param import min_value
+from network_module.compute_utils import one_hot_encoder
 
 
 class DiceLoss(torch.nn.Module):
-    def __init__(self, n_classes):
+    def __init__(self, n_classes, label_smooth=0, cof=1):
         super(DiceLoss, self).__init__()
+        self.label_smooth = label_smooth
         self.n_classes = n_classes
-
-    def _one_hot_encoder(self, targets):
-        class_mask = targets.data.new(targets.size(0), self.n_classes).fill_(0)
-        ids = targets.view(-1, 1)
-        class_mask.scatter_(1, ids.data, 1.)
-        return class_mask
+        self.cof = cof
 
     def forward(self, input, target, weight=None, softmax=True):
         if softmax:
             input = torch.softmax(input, dim=1)
-        target = self._one_hot_encoder(target)
+        target = one_hot_encoder(target, self.n_classes)
+        if self.label_smooth > 0:
+            min_p = self.label_smooth / (self.n_classes - 1)
+            target = (target == 1) * (1 - self.label_smooth) + (target == 0) * min_p
+
         if weight is None:
             weight = torch.tensor([1] * self.n_classes).type_as(input)
-        assert input.size() == target.size(), 'predict {} & target {} shape do not match'.format(input.size(), target.size())
+        assert input.size() == target.size(), 'predict {} & target {} shape do not match'.format(input.size(),
+                                                                                                 target.size())
 
         target = target.float()
         intersect = torch.sum(input * target, dim=0)

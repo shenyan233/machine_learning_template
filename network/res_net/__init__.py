@@ -70,7 +70,7 @@ class TrainModule(pl.LightningModule):
             amsgrad = True
         else:
             amsgrad = self.config['amsgrad']
-        optimizer = torch.optim.Adam(self.parameters(), weight_decay=1e-4, amsgrad=amsgrad)
+        optimizer = torch.optim.AdamW(self.parameters(), weight_decay=1e-4, amsgrad=amsgrad)
         return optimizer
 
     def load_pretrain_parameters(self):
@@ -83,4 +83,5 @@ class TrainModule(pl.LightningModule):
 
 class Evaluate:
     def __init__(self):
+        # The first is the monitor
         self.evaluate = [Accuracy()]

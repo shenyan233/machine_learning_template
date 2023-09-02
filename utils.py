@@ -286,6 +286,8 @@ def myprofile(func: str):
 
 def eval_prob_distribution():
     import matplotlib.pyplot as plt
+    import numpy
+
     valid_prob = pandas.read_csv('valid_prob.csv', header=None)
     right_prob = pandas.read_csv('right_prob.csv', header=None)
     false_prob = pandas.read_csv('false_prob.csv', header=None)
@@ -293,10 +295,25 @@ def eval_prob_distribution():
     max = valid_prob.max()[0]
     min = valid_prob.min()[0]
 
-    plt.hist(valid_prob, range=(min, max), bins=10, label='valid_prob')
-    plt.hist(false_prob, range=(min, max), bins=10, label='false_prob')
-    plt.hist(right_prob, range=(min, max), bins=10, label='right_prob')
+    plt.figure()
+    bins = 100
+    valid_prob_hist = plt.hist(valid_prob, range=(min, max), bins=bins, label='valid_prob')
+    false_prob_hist = plt.hist(false_prob, range=(min, max), bins=bins, label='false_prob')
+    right_prob_hist = plt.hist(right_prob, range=(min, max), bins=bins, label='right_prob', rwidth=0.5)
     plt.legend()
+
+    total_valid = numpy.zeros(bins)
+    total_right = numpy.zeros(bins)
+    for i in range(bins):
+        total_valid[i] = valid_prob_hist[0][i:].sum()
+        total_right[i] = right_prob_hist[0][i:].sum()
+
+    plt.figure()
+    plt.plot(right_prob_hist[0] / valid_prob_hist[0], label='right/valid hist')
+    plt.plot(total_right / total_valid, label='right/valid')
+    plt.plot([0.6666] * len(right_prob_hist[0]))
+    plt.legend()
+
     plt.show()
 
 

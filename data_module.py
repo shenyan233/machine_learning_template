@@ -14,7 +14,10 @@ class DataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.config = config
         self.dataset_path = datasets_path + '/' + config['dataset_name']
-        self.pin_memory = True
+        if config['accelerator'] == 'cpu':
+            self.pin_memory = False
+        else:
+            self.pin_memory = True
 
         if config['is_check']:
             imported = importlib.import_module('dataset.check')
@@ -32,14 +35,14 @@ class DataModule(pl.LightningDataModule):
 
     def setup(self, stage=None) -> None:
         if stage == 'fit' or stage is None:
-            dataset_train, dataset_val = self.get_fit_dataset_lists(self.dataset_path)
+            dataset_train, dataset_val = self.get_fit_dataset_lists(self.dataset_path, self.config)
             self.train_dataset = self.custom_dataset(dataset_train, 'train', self.config, self.dataset_path)
             self.val_dataset = self.custom_dataset(dataset_val, 'val', self.config, self.dataset_path)
         if stage == 'test' or stage is None:
             dataset_test = self.get_test_dataset_lists(self.dataset_path)
             self.test_dataset = self.custom_dataset(dataset_test, 'test', self.config, self.dataset_path)
 
-    def get_fit_dataset_lists(self, dataset_path):
+    def get_fit_dataset_lists(self, dataset_path, config):
         k_fold_dataset_list = self.get_k_fold_dataset_list(dataset_path)
         dataset_train, dataset_val = self.divide_fit_dataset_lists(k_fold_dataset_list)
         return dataset_train, dataset_val
@@ -101,7 +104,7 @@ class DataModule(pl.LightningDataModule):
         """
         val_batch_size = 1
         for num in range(self.config['batch_size']):
-            if len(self.val_dataset) % (self.config['batch_size'] - num) == 0:
+            if (len(self.val_dataset) % (self.config['batch_size'] - num)) == 0:
                 val_batch_size = self.config['batch_size'] - num
                 break
         return DataLoader(self.val_dataset, batch_size=val_batch_size, shuffle=False,
@@ -110,7 +113,7 @@ class DataModule(pl.LightningDataModule):
     def test_dataloader(self):
         test_batch_size = 1
         for num in range(self.config['batch_size']):
-            if len(self.test_dataset) % (self.config['batch_size'] - num) == 0:
+            if (len(self.test_dataset) % (self.config['batch_size'] - num)) == 0:
                 test_batch_size = self.config['batch_size'] - num
                 break
         return DataLoader(self.test_dataset, batch_size=test_batch_size, shuffle=False,

@@ -115,7 +115,11 @@ def main(config):
         else:
             load_checkpoint_path = None
         logger = pl_loggers.TensorBoardLogger('logs/', name=config['log_name'])
-        dm = DataModule(num_workers=min([cpu_count(), 8]), config=config)
+        if config['accelerator'] == 'cpu':
+            num_workers = 0
+        else:
+            num_workers = min([cpu_count(), 8])
+        dm = DataModule(num_workers=num_workers, config=config)
         # SaveCheckpoint should be created before TrainModule to ensure the deterministic initialization of network
         # parameters.
         # SaveCheckpoint的创建需要在TrainModule之前, 以保证网络参数初始化的确定性

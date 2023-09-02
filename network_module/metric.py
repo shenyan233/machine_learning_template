@@ -57,6 +57,8 @@ class Precision:
     def __init__(self, class_weight=None):
         if class_weight is not None:
             self.class_weight = torch.tensor(class_weight)
+        else:
+            self.class_weight = None
 
     def evaluate(self, output, target):
         output_index = output.argmax(1)
@@ -71,6 +73,8 @@ class Precision:
         if self.class_weight is None:
             return precision.mean()
         else:
+            if precision.device != self.class_weight.device:
+                self.class_weight = self.class_weight.type_as(precision)
             return torch.sum(precision * self.class_weight) / torch.sum(self.class_weight)
 
 

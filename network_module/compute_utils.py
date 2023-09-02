@@ -25,17 +25,38 @@ def del_tensor_ele(arr, index):
     return torch.cat((arr1, arr2), dim=0)
 
 
-def norm(array, column_index):
+def norm(array: torch.Tensor, column_index):
     # Extract columns to normalize
     # 提取要归一化的列
-    column = array[:, column_index]
-    min_value = numpy.min(column)
-    max_value = numpy.max(column)
-    if (max_value - min_value) != 0:
-        normalized_column = (column - min_value) / (max_value - min_value)
-    else:
-        normalized_column = column * 0
-    array[:, column_index] = normalized_column
+    column = array[:, :, column_index]
+    # Calculate the minimum and maximum values of a column
+    # 计算列的最小值和最大值
+    min_value = column.min(1)[0].min(1)[0]
+    max_value = column.max(1)[0].max(1)[0]
+
+    max_range = max_value - min_value
+    # # When the minimum value is 0, the minimum scale is denoted as 0
+    # # 当最小值为0时，最小尺度记为0
+    # scale_min = min_value > 0
+    # # When the minimum value is 0, the maximum scale is divided by 1,
+    # # otherwise the percentage of increment is obtained
+    # # 当最小值为0时，最大尺度除1，否则得到增量的百分比
+    # scale_max = max_range / (min_value + (min_value == 0))
+
+    # Normalized column data, when the change is constant 0, the denominator is 1, and after normalization,
+    # it is constant 0
+    # 归一化列数据，当变化量恒为0时，分母为1，归一化后恒为0
+    normalized_column = (column - min_value.unsqueeze(dim=1).unsqueeze(dim=1)) / (
+            max_range + (max_range == 0)).unsqueeze(dim=1).unsqueeze(dim=1)
+    array[:, :, column_index] = normalized_column
+
+    # array = torch.concat([array,
+    #                       (torch.ones((array.shape[0], array.shape[1], 1)).type_as(scale_max) * scale_max.unsqueeze(
+    #                           dim=1).unsqueeze(
+    #                           dim=1)),
+    #                       (torch.ones((array.shape[0], array.shape[1], 1)).type_as(scale_min) * scale_min.unsqueeze(
+    #                           dim=1).unsqueeze(
+    #                           dim=1))], dim=2)
     return array
 
 
