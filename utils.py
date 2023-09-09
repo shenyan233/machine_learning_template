@@ -90,10 +90,10 @@ def visual_label(dataset_path, n_classes):
             quality=95)
 
 
-def get_ckpt_path(version_nth: int, log_name, path='.'):
+def get_ckpt_path(version_nth: int, log_name, version_idx=0, path='.'):
     checkpoints_path = f'{path}/logs/{log_name}/version_{version_nth}/checkpoints'
     ckpt_path = glob.glob(checkpoints_path + '/*.ckpt')
-    return ckpt_path[0].replace('\\', '/')
+    return ckpt_path[version_idx].replace('\\', '/')
 
 
 def ckpt2onnx(version_nth, model_name, log_name, input_size, config, save_path):

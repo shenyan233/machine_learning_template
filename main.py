@@ -38,6 +38,7 @@ English config annotation：
     :param log_name: 
     :param version_nth: This value is the number of versions of resumed training or the number of versions
                         at which the test began
+    :param version_idx:
     :param seed:
     :param path_final_save: After each update of the CKPT file, store module in a different location
     :param every_n_epochs: Set a checkpoint for every n epochs
@@ -68,6 +69,7 @@ English config annotation：
                       'bf16-mixed'）。可用于CPU、GPU、TPU、HPU或IPU。
     :param log_name: 
     :param version_nth: 该值为重载训练的版本数或测试开始的版本数
+    :param version_idx:
     :param seed:
     :param path_final_save: 每次更新ckpt文件后, 将其存放到另一个位置
     :param every_n_epochs: 每n个epoch设置一个检查点
@@ -88,6 +90,7 @@ default_config = {
     'precision': '32-true',
     'log_name': 'lightning_logs',
     'version_nth': None,
+    'version_idx': 0,
     'seed': None,
     'path_final_save': None,
     'every_n_epochs': 1,
@@ -111,7 +114,7 @@ def main(config):
         config['kth_fold'] = kth_fold
         config['time'] = str(datetime.now())
         if config['version_nth'] is not None:
-            load_checkpoint_path = get_ckpt_path(config['version_nth'], config['log_name'])
+            load_checkpoint_path = get_ckpt_path(config['version_nth'], config['log_name'], config['version_idx'])
         else:
             load_checkpoint_path = None
         logger = pl_loggers.TensorBoardLogger('logs/', name=config['log_name'])
@@ -165,7 +168,7 @@ def main(config):
                 print('testing|测试')
                 training_module = imported.TrainModule.load_from_checkpoint(
                     checkpoint_path=load_checkpoint_path,
-                    map_location=torch.device('cpu') if not torch.cuda.is_available() else None,
+                    map_location=f'cuda:{devices[0]}' if isinstance(devices, list) else 'cpu',
                     **{'config': config})
                 trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
                                      profiler=config['profiler'],

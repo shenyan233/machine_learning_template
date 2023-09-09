@@ -39,7 +39,7 @@ class DataModule(pl.LightningDataModule):
             self.train_dataset = self.custom_dataset(dataset_train, 'train', self.config, self.dataset_path)
             self.val_dataset = self.custom_dataset(dataset_val, 'val', self.config, self.dataset_path)
         if stage == 'test' or stage is None:
-            dataset_test = self.get_test_dataset_lists(self.dataset_path)
+            dataset_test = self.get_test_dataset_lists(self.dataset_path, self.config)
             self.test_dataset = self.custom_dataset(dataset_test, 'test', self.config, self.dataset_path)
 
     def get_fit_dataset_lists(self, dataset_path, config):

@@ -6,13 +6,13 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 
 
-def get_fit_dataset_lists(dataset_path):
+def get_fit_dataset_lists(dataset_path, config):
     dataset_train = glob.glob(dataset_path + '/train/image/*.png')
     dataset_val = glob.glob(dataset_path + '/test/image/*.png')
     return dataset_train, dataset_val
 
 
-def get_test_dataset_lists(dataset_path):
+def get_test_dataset_lists(dataset_path, config):
     return glob.glob(dataset_path + '/test/image/*.png')
 
 

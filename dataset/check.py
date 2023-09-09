@@ -2,13 +2,13 @@ import torch
 from torch.utils.data import Dataset
 
 
-def get_fit_dataset_lists(dataset_path):
+def get_fit_dataset_lists(dataset_path, config):
     dataset_train = [0]
     dataset_val = [0]
     return dataset_train, dataset_val
 
 
-def get_test_dataset_lists(dataset_path):
+def get_test_dataset_lists(dataset_path, config):
     return [0]
 
 
