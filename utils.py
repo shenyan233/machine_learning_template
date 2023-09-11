@@ -92,9 +92,11 @@ def visual_label(dataset_path, n_classes):
 
 def get_ckpt_path(version_nth: int, log_name, version_idx=0, path='.'):
     checkpoints_path = f'{path}/logs/{log_name}/version_{version_nth}/checkpoints'
-    ckpt_path = glob.glob(checkpoints_path + '/*.ckpt')
-    return ckpt_path[version_idx].replace('\\', '/')
-
+    ckpt_paths = glob.glob(checkpoints_path + '/*.ckpt')
+    for ckpt_path in ckpt_paths:
+        if f'epoch={version_idx}-step' in ckpt_path:
+            return ckpt_path.replace('\\', '/')
+    assert False
 
 def ckpt2onnx(version_nth, model_name, log_name, input_size, config, save_path):
     """
