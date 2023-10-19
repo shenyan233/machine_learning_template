@@ -4,7 +4,17 @@ This project implements the neural network training and testing pipeline based o
 中文介绍: https://zhuanlan.zhihu.com/p/520694143
 
 # Usage
-## Configure the network architecture and data set
+
+## Install dependencies
+```bash
+pip install -r requirements.txt
+```
+* cuda and torch need to be installed by itself. Recommendation: 
+```bash
+pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+```
+
+## Configure the network architecture and dataset
 The directory structure of the whole project is as follows:
 ```bash
 .
@@ -34,17 +44,8 @@ image (*.png) name is the line number in the corresponding label.txt. network.py
 You can change the file name of network.py to another name, but __init__.py needs to be changed synchronously.
 The configuration parameters of the task flow is saved in tasks.json.
 
-## Install dependencies
-```bash
-pip install -r requirements.txt
-```
-* cuda and torch need to be installed by itself. Recommendation: 
-```bash
-pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
-```
-
 ## Set the parameters
-Set the parameters in ./network/{network_name}/config.json, which include model_name, dataset_path, stage, max_epochs, 
+Set the parameters in ./tasks.json, which include model_name, dataset_path, stage, max_epochs, 
 batch_size and so on. Parameters include optional and required parameters. See the annotation in main.py for details. 
 The training parameter 'stage' is 'fit' or 'test', which are represented as training phase or testing phase, respectively.
 

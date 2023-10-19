@@ -5,6 +5,7 @@ import glob
 import pstats
 
 import pandas
+import torch
 
 
 def zip_dir(dir_path, result_path):
@@ -317,6 +318,21 @@ def eval_prob_distribution():
     plt.legend()
 
     plt.show()
+
+
+def find_usable_cuda_devices(num: int):
+    usable_cuda = []
+    cuda_num = torch.cuda.device_count()
+    for i in range(cuda_num):
+        try:
+            test = torch.tensor([1.0]).cuda(cuda_num)
+            assert test[0] == 1
+            usable_cuda.append(i)
+            if len(usable_cuda) == num:
+                return usable_cuda
+        except:
+            print(f'cuda: {i} is occupied')
+    assert False, 'usable cuda devices is not enough'
 
 
 if __name__ == "__main__":

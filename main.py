@@ -2,14 +2,13 @@ import json
 import sys
 from datetime import datetime
 import argparse
-from pytorch_lightning.accelerators import find_usable_cuda_devices
 from save_checkpoint import SaveCheckpoint
 from pytorch_lightning import loggers as pl_loggers
 import pytorch_lightning as pl
 import importlib
 from data_module import DataModule
 from multiprocessing import cpu_count
-from utils import get_ckpt_path
+from utils import get_ckpt_path, find_usable_cuda_devices
 import torch
 
 """
@@ -118,8 +117,31 @@ def main(config):
         else:
             load_checkpoint_path = None
         logger = pl_loggers.TensorBoardLogger('logs/', name=config['log_name'])
+        # Under ‘accelerator=auto’ cannot automatically select unoccupied GPUs,
+        # so the accelerator operation is rewritten here
+        if config['accelerator'] == 'auto':
+            accelerator_list = ['gpu', 'cpu']
+        else:
+            accelerator_list = [config['accelerator']]
+        for accelerator in accelerator_list:
+            if accelerator == 'gpu':
+                if torch.cuda.is_available():
+                    try:
+                        config['devices'] = find_usable_cuda_devices(config['devices'])
+                        config['accelerator'] = accelerator
+                        break
+                    except Exception as e:
+                        print(e)
+            if accelerator == 'cpu':
+                config['accelerator'] = accelerator
+                break
+        else:
+            assert False, f'accelerators ({accelerator_list}) is all unable'
+
+        print(f"使用{config['accelerator']}设备: {config['devices']}")
+
         if config['accelerator'] == 'cpu':
-            num_workers = 0
+            num_workers = 1
         else:
             num_workers = min([cpu_count(), 8])
         dm = DataModule(num_workers=num_workers, config=config)
@@ -128,27 +150,11 @@ def main(config):
         # SaveCheckpoint的创建需要在TrainModule之前, 以保证网络参数初始化的确定性
         save_checkpoint = SaveCheckpoint(config=config)
         imported = importlib.import_module('network.%(model_name)s' % config)
-        if torch.cuda.is_available() and config['accelerator'] != 'cpu' and config['devices'] == 1:
-            devices_last = [-1]
-            while True:
-                devices = find_usable_cuda_devices(config['devices'])
-                if devices_last[0] == devices[0]:
-                    assert False, 'gpu均被占用'
-                try:
-                    with torch.cuda.device(devices[0]):
-                        torch.tensor([1.0]).cuda()
-                    break
-                except:
-                    devices_last = devices
-                    continue
-            print('设备:', devices)
-        else:
-            devices = config['devices']
         if config['stage'] == 'fit':
             training_module = imported.TrainModule(config=config)
             trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
                                  accelerator=config['accelerator'],
-                                 devices=devices,
+                                 devices=config['devices'],
                                  max_epochs=config['max_epochs'], log_every_n_steps=1,
                                  accumulate_grad_batches=config['accumulate_grad_batches'],
                                  profiler=config['profiler'],
@@ -168,15 +174,15 @@ def main(config):
                 print('testing|测试')
                 training_module = imported.TrainModule.load_from_checkpoint(
                     checkpoint_path=load_checkpoint_path,
-                    map_location=f'cuda:{devices[0]}' if isinstance(devices, list) else 'cpu',
+                    map_location=f"cuda:{config['devices'][0]}" if isinstance(config['devices'], list) else 'cpu',
                     **{'config': config})
                 trainer = pl.Trainer(logger=logger, precision=config['precision'], callbacks=[save_checkpoint],
                                      profiler=config['profiler'],
                                      accelerator=config['accelerator'],
-                                     devices=devices,
+                                     devices=config['devices'],
                                      )
                 trainer.test(training_module, datamodule=dm)
-        # The result can be viewed using ’tensorboard --logdir logs‘ in CMD, with the % prefix required
+        # The result can be viewed using 'tensorboard --logdir logs' in CMD, with the % prefix required
         # in Jupyter format
         # 在cmd中使用tensorboard --logdir logs命令可以查看结果，在Jupyter格式下需要加%前缀
         if config['version_nth'] is not None:
@@ -207,6 +213,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-nth', type=str, help='task_nth. example format: tasks1', default='')
     args = parser.parse_args()
+    nth_thread = args.nth
 
     if torch.cuda.is_available():
         torch.set_float32_matmul_precision("high")
@@ -216,19 +223,17 @@ if __name__ == "__main__":
     # 将自定义输出流设置为 sys.stdout
     sys.stderr = terminal_output
 
-    nth_thread = args.nth
     while True:
         # Obtain all parameters
         # 获得全部参数
         with open(f"./tasks{nth_thread}.json", "r", encoding='UTF-8') as f:
             configs = json.load(f)
         if len(configs) == 0:
-            print('over|结束')
+            print('tasks over|已完成全部任务')
             break
         current_key = str(min([int(i) for i in list(configs.keys())]))
-        print(f'Current_key is {current_key}')
-        config = configs[current_key]
-        main(config=config)
+        print(f'Current task key is {current_key}')
+        main(config=configs[current_key])
         if terminal_output.KeyboardInterrupt:
             break
         else:

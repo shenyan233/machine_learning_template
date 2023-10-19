@@ -80,7 +80,7 @@ class DataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.config['batch_size'], shuffle=True,
-                          num_workers=self.num_workers, pin_memory=self.pin_memory)
+                          num_workers=self.num_workers, pin_memory=self.pin_memory, persistent_workers=True)
 
     def val_dataloader(self):
         """
@@ -108,7 +108,7 @@ class DataModule(pl.LightningDataModule):
                 val_batch_size = self.config['batch_size'] - num
                 break
         return DataLoader(self.val_dataset, batch_size=val_batch_size, shuffle=False,
-                          num_workers=self.num_workers, pin_memory=self.pin_memory)
+                          num_workers=self.num_workers, pin_memory=self.pin_memory, persistent_workers=True)
 
     def test_dataloader(self):
         test_batch_size = 1
@@ -118,4 +118,4 @@ class DataModule(pl.LightningDataModule):
                 break
         return DataLoader(self.test_dataset, batch_size=test_batch_size, shuffle=False,
                           num_workers=self.num_workers,
-                          pin_memory=self.pin_memory)
+                          pin_memory=self.pin_memory, persistent_workers=True)
