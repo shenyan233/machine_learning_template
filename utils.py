@@ -325,7 +325,7 @@ def find_usable_cuda_devices(num: int):
     cuda_num = torch.cuda.device_count()
     for i in range(cuda_num):
         try:
-            test = torch.tensor([1.0]).cuda(cuda_num)
+            test = torch.tensor([1.0]).cuda(i)
             assert test[0] == 1
             usable_cuda.append(i)
             if len(usable_cuda) == num:
