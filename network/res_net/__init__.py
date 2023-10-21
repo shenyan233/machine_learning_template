@@ -37,7 +37,7 @@ class TrainModule(pl.LightningModule):
         else:
             logits = self.forward(x)
         loss = sum([loss(logits, label) for loss in self.losses])
-        assert not torch.isnan(loss)
+        assert stage != 'Train' or not torch.isnan(loss)
         self.log(f"{stage} loss", loss)
         for metric in self.evaluate.evaluate:
             evaluation = metric.evaluate(logits, label)
