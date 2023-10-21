@@ -26,44 +26,32 @@ class TrainModule(pl.LightningModule):
         if lr_decay != 1:
             print(f'lr multiplied by {lr_decay}, now is {now}')
 
-    def training_step(self, batch, batch_idx):
-        _, x, label = batch
-        logits = self.forward(x)
-        loss = sum([loss(logits, label) for loss in self.losses])
-        assert not torch.isnan(loss)
-        self.log("Training loss", loss)
-        for metric in self.evaluate.evaluate:
-            evaluation = metric.evaluate(logits, label)
-            self.log(f"Training {metric.name}", evaluation)
-        # TODO log learning rate
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        _, x, label = batch
-        logits = self.forward(x)
-        loss = sum([loss(logits, label) for loss in self.losses])
-        self.log("Validation loss", loss)
-        for metric in self.evaluate.evaluate:
-            evaluation = metric.evaluate(logits, label)
-            self.log(f"Validation {metric.name}", evaluation)
-        return loss
-
-    def test_step(self, batch, batch_idx):
+    def step(self, stage: str, batch):
         _, x, label = batch
         if self.time_sum is None:
             time_start = time.time()
             logits = self.forward(x)
             time_end = time.time()
             self.time_sum = time_end - time_start
-            print(f'\nInference time is {self.time_sum:f}|推理时间为: {self.time_sum:f}')
+            self.log(f"{stage} time", self.time_sum)
         else:
             logits = self.forward(x)
         loss = sum([loss(logits, label) for loss in self.losses])
-        self.log("Test loss", loss)
+        assert not torch.isnan(loss)
+        self.log(f"{stage} loss", loss)
         for metric in self.evaluate.evaluate:
             evaluation = metric.evaluate(logits, label)
-            self.log(f"Test {metric.name}", evaluation)
+            self.log(f"{stage} {metric.name}", evaluation)
         return loss
+
+    def training_step(self, batch, batch_idx):
+        return self.step('Train', batch)
+
+    def validation_step(self, batch, batch_idx):
+        return self.step('Validation', batch)
+
+    def test_step(self, batch, batch_idx):
+        return self.step('Test', batch)
 
     def configure_optimizers(self):
         if 'amsgrad' not in self.config:
