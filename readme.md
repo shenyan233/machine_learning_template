@@ -6,12 +6,13 @@ This project implements the neural network training and testing pipeline based o
 # Usage
 
 ## Install dependencies
+python version: 3.7-3.10
 ```bash
 pip install -r requirements.txt
 ```
 * cuda and torch need to be installed by itself. Recommendation: 
 ```bash
-pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
 ```
 
 ## Configure the network architecture and dataset
