@@ -1,7 +1,7 @@
 # A Machine Learning Template based on Pytorch Lightning
 This project implements the neural network training and testing pipeline based on PyTorch Lightning. In addition to implementing the workflow of PyTorch Lightning, the project also realized adding tasks in the training process through task pool, k-fold cross-validation, saving the training results in .CVS, accepting random seeds for resumed training, and converting the model to .onnx and .tflite.
 
-中文介绍: https://zhuanlan.zhihu.com/p/520694143
+中文介绍: http://worthpen.top/#/home/blog?blog=pot-blog36.md
 
 # Usage
 
